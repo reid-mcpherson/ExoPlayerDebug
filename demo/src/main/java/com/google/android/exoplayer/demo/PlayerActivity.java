@@ -33,8 +33,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnKeyListener;
-import android.view.View.OnTouchListener;
 import android.view.accessibility.CaptioningManager;
 import android.widget.Button;
 import android.widget.MediaController;
@@ -116,6 +114,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
     @Bind(R.id.audio_controls) Button audioButton;
     @Bind(R.id.text_controls) Button textButton;
     @Bind(R.id.retry_button) Button retryButton;
+    @Bind(R.id.master_manifest) Button manifestButton;
 
     private EventLogger eventLogger;
     private MediaController mediaController;
@@ -142,7 +141,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         ButterKnife.bind(this);
 
         View root = findViewById(R.id.root);
-        root.setOnTouchListener(new OnTouchListener() {
+        root.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
@@ -153,7 +152,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
                 return true;
             }
         });
-        root.setOnKeyListener(new OnKeyListener() {
+        root.setOnKeyListener(new View.OnKeyListener() {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                 if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE
@@ -177,6 +176,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
 
         audioCapabilitiesReceiver = new AudioCapabilitiesReceiver(this, this);
         audioCapabilitiesReceiver.register();
+
     }
 
     @Override
@@ -200,6 +200,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         if (Util.SDK_INT <= 23 || player == null) {
             onShown();
         }
+
     }
 
     private void onShown() {
@@ -463,58 +464,59 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         return player != null && player.getTrackCount(type) > 0;
     }
 
-    public void showVideoPopup(View v) {
+    public void onButtonClick(View v) {
         PopupMenu popup = new PopupMenu(this, v);
-        configurePopupWithTracks(popup, null, DemoPlayer.TYPE_VIDEO);
-        popup.show();
-    }
-
-    public void showAudioPopup(View v) {
-        PopupMenu popup = new PopupMenu(this, v);
-        Menu menu = popup.getMenu();
-        menu.add(Menu.NONE, Menu.NONE, Menu.NONE, R.string.enable_background_audio);
-        final MenuItem backgroundAudioItem = menu.findItem(0);
-        backgroundAudioItem.setCheckable(true);
-        backgroundAudioItem.setChecked(enableBackgroundAudio);
-        OnMenuItemClickListener clickListener = new OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                if (item == backgroundAudioItem) {
-                    enableBackgroundAudio = !item.isChecked();
-                    return true;
-                }
-                return false;
-            }
-        };
-        configurePopupWithTracks(popup, clickListener, DemoPlayer.TYPE_AUDIO);
-        popup.show();
-    }
-
-    public void showTextPopup(View v) {
-        PopupMenu popup = new PopupMenu(this, v);
-        configurePopupWithTracks(popup, null, DemoPlayer.TYPE_TEXT);
-        popup.show();
-    }
-
-    public void showVerboseLogPopup(View v) {
-        PopupMenu popup = new PopupMenu(this, v);
-        Menu menu = popup.getMenu();
-        menu.add(Menu.NONE, 0, Menu.NONE, R.string.logging_normal);
-        menu.add(Menu.NONE, 1, Menu.NONE, R.string.logging_verbose);
-        menu.setGroupCheckable(Menu.NONE, true, true);
-        menu.findItem((VerboseLogUtil.areAllTagsEnabled()) ? 1 : 0).setChecked(true);
-        popup.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                if (item.getItemId() == 0) {
-                    VerboseLogUtil.setEnableAllTags(false);
-                } else {
-                    VerboseLogUtil.setEnableAllTags(true);
-                }
-                return true;
-            }
-        });
-        popup.show();
+        switch (v.getId()) {
+            case R.id.master_manifest:
+                break;
+            case R.id.audio_controls:
+                Menu menu = popup.getMenu();
+                menu.add(Menu.NONE, Menu.NONE, Menu.NONE, R.string.enable_background_audio);
+                final MenuItem backgroundAudioItem = menu.findItem(0);
+                backgroundAudioItem.setCheckable(true);
+                backgroundAudioItem.setChecked(enableBackgroundAudio);
+                OnMenuItemClickListener clickListener = new OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        if (item == backgroundAudioItem) {
+                            enableBackgroundAudio = !item.isChecked();
+                            return true;
+                        }
+                        return false;
+                    }
+                };
+                configurePopupWithTracks(popup, clickListener, DemoPlayer.TYPE_AUDIO);
+                popup.show();
+                break;
+            case R.id.video_controls:
+                configurePopupWithTracks(popup, null, DemoPlayer.TYPE_VIDEO);
+                popup.show();
+                break;
+            case R.id.text_controls:
+                configurePopupWithTracks(popup, null, DemoPlayer.TYPE_TEXT);
+                popup.show();
+                break;
+            case R.id.verbose_log_controls:
+                Menu menuVerbose = popup.getMenu();
+                menuVerbose.add(Menu.NONE, 0, Menu.NONE, R.string.logging_normal);
+                menuVerbose.add(Menu.NONE, 1, Menu.NONE, R.string.logging_verbose);
+                menuVerbose.setGroupCheckable(Menu.NONE, true, true);
+                menuVerbose.findItem((VerboseLogUtil.areAllTagsEnabled()) ? 1 : 0).setChecked(true);
+                popup.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        if (item.getItemId() == 0) {
+                            VerboseLogUtil.setEnableAllTags(false);
+                        } else {
+                            VerboseLogUtil.setEnableAllTags(true);
+                        }
+                        return true;
+                    }
+                });
+                popup.show();
+                break;
+            default:
+        }
     }
 
     private void configurePopupWithTracks(PopupMenu popup,
