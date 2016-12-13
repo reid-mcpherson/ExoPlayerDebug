@@ -18,6 +18,8 @@ package com.google.android.exoplayer.demo;
 import android.Manifest.permission;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -58,6 +60,8 @@ import com.google.android.exoplayer.demo.player.ExtractorRendererBuilder;
 import com.google.android.exoplayer.demo.player.HlsRendererBuilder;
 import com.google.android.exoplayer.demo.player.SmoothStreamingRendererBuilder;
 import com.google.android.exoplayer.drm.UnsupportedDrmException;
+import com.google.android.exoplayer.hls.HlsMasterPlaylist;
+import com.google.android.exoplayer.hls.HlsPlaylist;
 import com.google.android.exoplayer.metadata.id3.ApicFrame;
 import com.google.android.exoplayer.metadata.id3.GeobFrame;
 import com.google.android.exoplayer.metadata.id3.Id3Frame;
@@ -68,6 +72,7 @@ import com.google.android.exoplayer.text.CaptionStyleCompat;
 import com.google.android.exoplayer.text.Cue;
 import com.google.android.exoplayer.text.SubtitleLayout;
 import com.google.android.exoplayer.util.DebugTextViewHelper;
+import com.google.android.exoplayer.util.ManifestFetcher;
 import com.google.android.exoplayer.util.MimeTypes;
 import com.google.android.exoplayer.util.Util;
 import com.google.android.exoplayer.util.VerboseLogUtil;
@@ -98,6 +103,8 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
     private static final int ID_OFFSET = 2;
 
     private static final CookieManager defaultCookieManager;
+
+    private ManifestFetcher.ManifestCallback<HlsPlaylist> manifestCallback;
 
     static {
         defaultCookieManager = new CookieManager();
@@ -152,9 +159,6 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                     videoDebugPresenter.onRootViewTouched(mediaController.isShowing());
                 }
-//                else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-//                    view.performClick();
-//                }
                 return true;
             }
         });
@@ -196,6 +200,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
     public void onStart() {
         super.onStart();
         videoDebugPresenter.attachView(this);
+        videoDebugPresenter.present();
         if (Util.SDK_INT > 23) {
             onShown();
         }
@@ -335,7 +340,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
                 return new DashRendererBuilder(this, userAgent, contentUri.toString(),
                                                new WidevineTestMediaDrmCallback(contentId, provider));
             case Util.TYPE_HLS:
-                return new HlsRendererBuilder(this, userAgent, contentUri.toString());
+                return new HlsRendererBuilder(this, userAgent, contentUri.toString(), manifestCallback);
             case Util.TYPE_OTHER:
                 return new ExtractorRendererBuilder(this, userAgent, contentUri);
             default:
@@ -496,8 +501,15 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
     }
 
     @Override
-    public void displayMasterManifest() {
-        Toast.makeText(this, "Master Manifest Clicked", Toast.LENGTH_SHORT).show();
+    public void displayMasterManifest(HlsMasterPlaylist hlsMasterPlaylist) {
+        FragmentManager fragmentManager = getFragmentManager();
+        MasterManifestDialogFragment masterManifestDialogFragment = new MasterManifestDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(MasterManifestDialogFragment.MASTER_MANIFEST, new MasterManifestDialogFragment.SerializableHlsMasterPlaylist(hlsMasterPlaylist));
+        masterManifestDialogFragment.setArguments(bundle);
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+        transaction.add(android.R.id.content, masterManifestDialogFragment).addToBackStack(null).commit();
     }
 
     @Override
@@ -534,6 +546,16 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         PopupMenu popup = new PopupMenu(this, textButton);
         configurePopupWithTracks(popup, null, DemoPlayer.TYPE_TEXT);
         popup.show();
+    }
+
+    @Override
+    public void displayError(String text) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void setManifestCallback(ManifestFetcher.ManifestCallback<HlsPlaylist> manifestCallback) {
+        this.manifestCallback = manifestCallback;
     }
 
     @Override

@@ -1,13 +1,20 @@
 package com.google.android.exoplayer.demo;
 
 import com.google.android.exoplayer.demo.util.NullObject;
+import com.google.android.exoplayer.hls.HlsMasterPlaylist;
+import com.google.android.exoplayer.hls.HlsPlaylist;
+import com.google.android.exoplayer.util.ManifestFetcher;
 import com.google.android.exoplayer.util.VerboseLogUtil;
 
-public class LocalDebugPresenter implements VideoDebugPresenter {
+import java.io.IOException;
+
+public class LocalDebugPresenter implements VideoDebugPresenter, ManifestFetcher.ManifestCallback<HlsPlaylist> {
 
     private static final VideoDebugView NULL_VIEW = NullObject.create(VideoDebugView.class);
 
     private VideoDebugView view = NULL_VIEW;
+
+    private HlsMasterPlaylist manifest;
 
     @Override
     public void attachView(VideoDebugView view) {
@@ -21,7 +28,7 @@ public class LocalDebugPresenter implements VideoDebugPresenter {
 
     @Override
     public void present() {
-        //no-op
+        view.setManifestCallback(this);
     }
 
     @Override
@@ -45,7 +52,12 @@ public class LocalDebugPresenter implements VideoDebugPresenter {
 
     @Override
     public void onMasterManifestButtonClicked() {
-        view.displayMasterManifest();
+        if (manifest == null) {
+            view.displayError("Manifest is null");
+        } else {
+            view.hideControls();
+            view.displayMasterManifest(manifest);
+        }
     }
 
     @Override
@@ -61,5 +73,17 @@ public class LocalDebugPresenter implements VideoDebugPresenter {
     @Override
     public void onVideoButtonClicked() {
         view.displayVideoPopUp();
+    }
+
+    @Override
+    public void onSingleManifest(HlsPlaylist manifest) {
+        if (manifest instanceof HlsMasterPlaylist) {
+            this.manifest = (HlsMasterPlaylist) manifest;
+        }
+    }
+
+    @Override
+    public void onSingleManifestError(IOException e) {
+        //no-op
     }
 }

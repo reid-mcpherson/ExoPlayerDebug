@@ -28,7 +28,6 @@ import com.google.android.exoplayer.SampleSource;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.demo.player.DemoPlayer.RendererBuilder;
-import com.google.android.exoplayer.demo.util.Logger;
 import com.google.android.exoplayer.hls.DefaultHlsTrackSelector;
 import com.google.android.exoplayer.hls.HlsChunkSource;
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
@@ -66,16 +65,18 @@ public class HlsRendererBuilder implements RendererBuilder {
     private final String url;
 
     private AsyncRendererBuilder currentAsyncBuilder;
+    private final ManifestCallback<HlsPlaylist> manifestCallback;
 
-    public HlsRendererBuilder(Context context, String userAgent, String url) {
+    public HlsRendererBuilder(Context context, String userAgent, String url, ManifestCallback<HlsPlaylist> manifestCallback) {
         this.context = context;
         this.userAgent = userAgent;
         this.url = url;
+        this.manifestCallback = manifestCallback;
     }
 
     @Override
     public void buildRenderers(DemoPlayer player) {
-        currentAsyncBuilder = new AsyncRendererBuilder(context, userAgent, url, player);
+        currentAsyncBuilder = new AsyncRendererBuilder(context, userAgent, url, player, manifestCallback);
         currentAsyncBuilder.init();
     }
 
@@ -88,19 +89,20 @@ public class HlsRendererBuilder implements RendererBuilder {
     }
 
     private static final class AsyncRendererBuilder implements ManifestCallback<HlsPlaylist> {
-        private static final Logger LOG = Logger.getLogger(AsyncRendererBuilder.class);
 
         private final Context context;
         private final String userAgent;
         private final DemoPlayer player;
         private final ManifestFetcher<HlsPlaylist> playlistFetcher;
+        private final ManifestCallback<HlsPlaylist> manifestCallback;
 
         private boolean canceled;
 
-        public AsyncRendererBuilder(Context context, String userAgent, String url, DemoPlayer player) {
+        public AsyncRendererBuilder(Context context, String userAgent, String url, DemoPlayer player, ManifestCallback<HlsPlaylist> manifestCallback) {
             this.context = context;
             this.userAgent = userAgent;
             this.player = player;
+            this.manifestCallback = manifestCallback;
             HlsPlaylistParser parser = new HlsPlaylistParser();
             playlistFetcher = new ManifestFetcher<>(url, new DefaultUriDataSource(context, userAgent),
                                                     parser);
@@ -121,6 +123,7 @@ public class HlsRendererBuilder implements RendererBuilder {
             }
 
             player.onRenderersError(e);
+            manifestCallback.onSingleManifestError(e);
         }
 
         @Override
@@ -128,7 +131,7 @@ public class HlsRendererBuilder implements RendererBuilder {
             if (canceled) {
                 return;
             }
-            LOG.debug("AsyncRendererBuilder", "onSingleManifest manifest class | " + manifest.getClass().getSimpleName());
+            manifestCallback.onSingleManifest(manifest);
             Handler mainHandler = player.getMainHandler();
             LoadControl loadControl = new DefaultLoadControl(new DefaultAllocator(BUFFER_SEGMENT_SIZE));
             DefaultBandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
