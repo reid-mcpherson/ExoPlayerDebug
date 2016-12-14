@@ -1,4 +1,4 @@
-package com.google.android.exoplayer.demo;
+package com.google.android.exoplayer.demo.debug;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -6,6 +6,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import com.google.android.exoplayer.demo.R;
 
 public class VariantView extends LinearLayout {
 

@@ -18,8 +18,6 @@ package com.google.android.exoplayer.demo;
 import android.Manifest.permission;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -28,31 +26,26 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.accessibility.CaptioningManager;
-import android.widget.Button;
 import android.widget.MediaController;
-import android.widget.PopupMenu;
-import android.widget.PopupMenu.OnMenuItemClickListener;
-import android.widget.TextView;
 import android.widget.Toast;
 import butterknife.Bind;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 import com.google.android.exoplayer.AspectRatioFrameLayout;
 import com.google.android.exoplayer.ExoPlaybackException;
-import com.google.android.exoplayer.ExoPlayer;
 import com.google.android.exoplayer.MediaCodecTrackRenderer.DecoderInitializationException;
 import com.google.android.exoplayer.MediaCodecUtil.DecoderQueryException;
-import com.google.android.exoplayer.MediaFormat;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
+import com.google.android.exoplayer.demo.debug.DebugControlsPresenter;
+import com.google.android.exoplayer.demo.debug.DebugControlsPresenterImpl;
+import com.google.android.exoplayer.demo.debug.DebugControlsView;
+import com.google.android.exoplayer.demo.debug.ManifestProvider;
+import com.google.android.exoplayer.demo.debug.PlayerView;
 import com.google.android.exoplayer.demo.player.DashRendererBuilder;
 import com.google.android.exoplayer.demo.player.DemoPlayer;
 import com.google.android.exoplayer.demo.player.DemoPlayer.RendererBuilder;
@@ -60,7 +53,6 @@ import com.google.android.exoplayer.demo.player.ExtractorRendererBuilder;
 import com.google.android.exoplayer.demo.player.HlsRendererBuilder;
 import com.google.android.exoplayer.demo.player.SmoothStreamingRendererBuilder;
 import com.google.android.exoplayer.drm.UnsupportedDrmException;
-import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.metadata.id3.ApicFrame;
 import com.google.android.exoplayer.metadata.id3.GeobFrame;
 import com.google.android.exoplayer.metadata.id3.Id3Frame;
@@ -70,24 +62,23 @@ import com.google.android.exoplayer.metadata.id3.TxxxFrame;
 import com.google.android.exoplayer.text.CaptionStyleCompat;
 import com.google.android.exoplayer.text.Cue;
 import com.google.android.exoplayer.text.SubtitleLayout;
-import com.google.android.exoplayer.util.DebugTextViewHelper;
-import com.google.android.exoplayer.util.MimeTypes;
 import com.google.android.exoplayer.util.Util;
-import com.google.android.exoplayer.util.VerboseLogUtil;
 
 import javax.inject.Inject;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.util.List;
-import java.util.Locale;
+
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
 
 /**
  * An activity that plays media using {@link DemoPlayer}.
  */
-public class PlayerActivity extends Activity implements SurfaceHolder.Callback, OnClickListener,
-                                                        DemoPlayer.Listener, DemoPlayer.CaptionListener, DemoPlayer.Id3MetadataListener,
-                                                        AudioCapabilitiesReceiver.Listener, VideoDebugView {
+public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
+                                                        DemoPlayer.CaptionListener, DemoPlayer.Id3MetadataListener,
+                                                        DemoPlayer.Listener, AudioCapabilitiesReceiver.Listener, PlayerView {
 
     // For use within demo app code.
     public static final String CONTENT_ID_EXTRA = "content_id";
@@ -98,8 +89,6 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
     private static final String CONTENT_EXT_EXTRA = "type";
 
     private static final String TAG = "PlayerActivity";
-    private static final int MENU_GROUP_TRACKS = 1;
-    private static final int ID_OFFSET = 2;
 
     private static final CookieManager defaultCookieManager;
 
@@ -108,26 +97,18 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         defaultCookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
     }
 
-    @Bind(R.id.controls_root) View debugRootView;
     @Bind(R.id.shutter) View shutterView;
     @Bind(R.id.video_frame) AspectRatioFrameLayout videoFrame;
     @Bind(R.id.surface_view) SurfaceView surfaceView;
-    @Bind(R.id.debug_text_view) TextView debugTextView;
-    @Bind(R.id.player_state_view) TextView playerStateTextView;
+    @Bind(R.id.view_debug) DebugControlsView debugView;
+
     @Bind(R.id.subtitles) SubtitleLayout subtitleLayout;
-    @Bind(R.id.video_controls) Button videoButton;
-    @Bind(R.id.audio_controls) Button audioButton;
-    @Bind(R.id.text_controls) Button textButton;
-    @Bind(R.id.retry_button) Button retryButton;
-    @Bind(R.id.master_manifest) Button manifestButton;
-    @Bind(R.id.verbose_log_controls) Button verboseLogControls;
 
     @Inject ManifestProvider manifestProvider;
 
     private EventLogger eventLogger;
     private MediaController mediaController;
     private DemoPlayer player;
-    private DebugTextViewHelper debugViewHelper;
     private boolean playerNeedsPrepare;
 
     private long playerPosition;
@@ -139,8 +120,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
     private String provider;
 
     private AudioCapabilitiesReceiver audioCapabilitiesReceiver;
-
-    private VideoDebugPresenter videoDebugPresenter;
+    private DebugControlsPresenter debugControlsPresenter;
 
     // Activity lifecycle
 
@@ -150,14 +130,20 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         setContentView(R.layout.player_activity);
         ButterKnife.bind(this);
         ((DaggerObjectGraphProvider) getApplicationContext()).getObjectGraph().inject(this);
-        videoDebugPresenter = new LocalDebugPresenter(manifestProvider);
 
         View root = findViewById(R.id.root);
         root.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                    videoDebugPresenter.onRootViewTouched(mediaController.isShowing());
+                    if (debugControlsPresenter != null) {
+                        debugControlsPresenter.toggleControls(mediaController.isShowing());
+                        if (mediaController.isShowing()) {
+                            hideControls();
+                        } else {
+                            showControls();
+                        }
+                    }
                 }
                 return true;
             }
@@ -177,7 +163,6 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
 
         mediaController = new KeyCompatibleMediaController(this);
         mediaController.setAnchorView(root);
-        retryButton.setOnClickListener(this);
 
         CookieHandler currentHandler = CookieHandler.getDefault();
         if (currentHandler != defaultCookieManager) {
@@ -199,8 +184,6 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
     @Override
     public void onStart() {
         super.onStart();
-        videoDebugPresenter.attachView(this);
-        videoDebugPresenter.present();
         if (Util.SDK_INT > 23) {
             onShown();
         }
@@ -246,7 +229,6 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         if (Util.SDK_INT > 23) {
             onHidden();
         }
-        videoDebugPresenter.detachView();
     }
 
     private void onHidden() {
@@ -255,7 +237,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         } else {
             player.setBackgrounded(true);
         }
-        shutterView.setVisibility(View.VISIBLE);
+        shutterView.setVisibility(VISIBLE);
     }
 
     @Override
@@ -265,14 +247,6 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         releasePlayer();
     }
 
-    // OnClickListener methods
-
-    @Override
-    public void onClick(View view) {
-        if (view == retryButton) {
-            preparePlayer(true);
-        }
-    }
 
     // AudioCapabilitiesReceiver.Listener methods
 
@@ -348,7 +322,18 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         }
     }
 
-    private void preparePlayer(boolean playWhenReady) {
+    @Override
+    public boolean backgroundAudioEnabled() {
+        return enableBackgroundAudio;
+    }
+
+    @Override
+    public void enableBackgroundAudio(boolean backgroundAudio) {
+        this.enableBackgroundAudio = backgroundAudio;
+    }
+
+    @Override
+    public void preparePlayer(boolean playWhenReady) {
         if (player == null) {
             player = new DemoPlayer(getRendererBuilder());
             player.addListener(this);
@@ -363,22 +348,29 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
             player.addListener(eventLogger);
             player.setInfoListener(eventLogger);
             player.setInternalErrorListener(eventLogger);
-            debugViewHelper = new DebugTextViewHelper(player, debugTextView);
-            debugViewHelper.start();
         }
         if (playerNeedsPrepare) {
             player.prepare();
             playerNeedsPrepare = false;
-            updateButtonVisibilities();
         }
+        if (debugControlsPresenter != null) {
+            debugControlsPresenter.detachView();
+        }
+        debugControlsPresenter = new DebugControlsPresenterImpl(player, manifestProvider);
+        debugControlsPresenter.attachView(debugView, this);
+        debugControlsPresenter.present();
+
         player.setSurface(surfaceView.getHolder().getSurface());
         player.setPlayWhenReady(playWhenReady);
     }
 
     private void releasePlayer() {
+        if (debugControlsPresenter != null) {
+            debugControlsPresenter.detachView();
+            debugControlsPresenter = null;
+        }
+
         if (player != null) {
-            debugViewHelper.stop();
-            debugViewHelper = null;
             playerPosition = player.getCurrentPosition();
             player.release();
             player = null;
@@ -391,32 +383,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
 
     @Override
     public void onStateChanged(boolean playWhenReady, int playbackState) {
-        if (playbackState == ExoPlayer.STATE_ENDED) {
-            showControls();
-        }
-        String text = "playWhenReady=" + playWhenReady + ", playbackState=";
-        switch (playbackState) {
-            case ExoPlayer.STATE_BUFFERING:
-                text += "buffering";
-                break;
-            case ExoPlayer.STATE_ENDED:
-                text += "ended";
-                break;
-            case ExoPlayer.STATE_IDLE:
-                text += "idle";
-                break;
-            case ExoPlayer.STATE_PREPARING:
-                text += "preparing";
-                break;
-            case ExoPlayer.STATE_READY:
-                text += "ready";
-                break;
-            default:
-                text += "unknown";
-                break;
-        }
-        playerStateTextView.setText(text);
-        updateButtonVisibilities();
+        //no-op
     }
 
     @Override
@@ -452,219 +419,33 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
             Toast.makeText(getApplicationContext(), errorString, Toast.LENGTH_LONG).show();
         }
         playerNeedsPrepare = true;
-        updateButtonVisibilities();
         showControls();
     }
 
     @Override
     public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees,
                                    float pixelWidthAspectRatio) {
-        shutterView.setVisibility(View.GONE);
+        shutterView.setVisibility(GONE);
         videoFrame.setAspectRatio(
                 height == 0 ? 1 : (width * pixelWidthAspectRatio) / height);
     }
 
-    // User controls
-
-    private void updateButtonVisibilities() {
-        retryButton.setVisibility(playerNeedsPrepare ? View.VISIBLE : View.GONE);
-        videoButton.setVisibility(haveTracks(DemoPlayer.TYPE_VIDEO) ? View.VISIBLE : View.GONE);
-        audioButton.setVisibility(haveTracks(DemoPlayer.TYPE_AUDIO) ? View.VISIBLE : View.GONE);
-        textButton.setVisibility(haveTracks(DemoPlayer.TYPE_TEXT) ? View.VISIBLE : View.GONE);
+    @Override
+    public boolean needsPrepare() {
+        return playerNeedsPrepare;
     }
 
-    private boolean haveTracks(int type) {
+    @Override
+    public boolean haveTracks(int type) {
         return player != null && player.getTrackCount(type) > 0;
     }
 
-    @OnClick({R.id.master_manifest, R.id.audio_controls, R.id.video_controls, R.id.text_controls, R.id.verbose_log_controls})
-    public void onButtonClick(View v) {
-
-        switch (v.getId()) {
-            case R.id.master_manifest:
-                videoDebugPresenter.onMasterManifestButtonClicked();
-                break;
-            case R.id.audio_controls:
-                videoDebugPresenter.onAudioButtonClicked();
-                break;
-            case R.id.video_controls:
-                videoDebugPresenter.onVideoButtonClicked();
-                break;
-            case R.id.text_controls:
-                videoDebugPresenter.onTextButtonClicked();
-                break;
-            case R.id.verbose_log_controls:
-                videoDebugPresenter.onVerboseLoggingButtonClicked();
-                break;
-            default:
-        }
-    }
-
-    @Override
-    public void displayMasterManifest(HlsMasterPlaylist hlsMasterPlaylist) {
-        FragmentManager fragmentManager = getFragmentManager();
-        MasterManifestDialogFragment masterManifestDialogFragment = new MasterManifestDialogFragment();
-        Bundle bundle = new Bundle();
-        bundle.putSerializable(MasterManifestDialogFragment.MASTER_MANIFEST, new MasterManifestDialogFragment.SerializableHlsMasterPlaylist(hlsMasterPlaylist));
-        masterManifestDialogFragment.setArguments(bundle);
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
-        transaction.add(android.R.id.content, masterManifestDialogFragment).addToBackStack(null).commit();
-    }
-
-    @Override
-    public void displayAudioPopUp() {
-        PopupMenu popup = new PopupMenu(this, audioButton);
-        Menu menu = popup.getMenu();
-        menu.add(Menu.NONE, Menu.NONE, Menu.NONE, R.string.enable_background_audio);
-        final MenuItem backgroundAudioItem = menu.findItem(0);
-        backgroundAudioItem.setCheckable(true);
-        backgroundAudioItem.setChecked(enableBackgroundAudio);
-        OnMenuItemClickListener clickListener = new OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                if (item == backgroundAudioItem) {
-                    enableBackgroundAudio = !item.isChecked();
-                    return true;
-                }
-                return false;
-            }
-        };
-        configurePopupWithTracks(popup, clickListener, DemoPlayer.TYPE_AUDIO);
-        popup.show();
-    }
-
-    @Override
-    public void displayVideoPopUp() {
-        PopupMenu popup = new PopupMenu(this, videoButton);
-        configurePopupWithTracks(popup, null, DemoPlayer.TYPE_VIDEO);
-        popup.show();
-    }
-
-    @Override
-    public void displayTextPopUp() {
-        PopupMenu popup = new PopupMenu(this, textButton);
-        configurePopupWithTracks(popup, null, DemoPlayer.TYPE_TEXT);
-        popup.show();
-    }
-
-    @Override
-    public void displayError(String text) {
-        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void displayVerboseLogPopUp(final MenuCallback menuCallback) {
-        PopupMenu popup = new PopupMenu(this, verboseLogControls);
-        Menu menuVerbose = popup.getMenu();
-        menuVerbose.add(Menu.NONE, 0, Menu.NONE, R.string.logging_normal);
-        menuVerbose.add(Menu.NONE, 1, Menu.NONE, R.string.logging_verbose);
-        menuVerbose.setGroupCheckable(Menu.NONE, true, true);
-        menuVerbose.findItem((VerboseLogUtil.areAllTagsEnabled()) ? 1 : 0).setChecked(true);
-        popup.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                menuCallback.onMenuItemClick(item.getItemId() != 0);
-                return true;
-            }
-        });
-        popup.show();
-    }
-
-    private void configurePopupWithTracks(PopupMenu popup,
-                                          final OnMenuItemClickListener customActionClickListener,
-                                          final int trackType) {
-        if (player == null) {
-            return;
-        }
-        int trackCount = player.getTrackCount(trackType);
-        if (trackCount == 0) {
-            return;
-        }
-        popup.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                return (customActionClickListener != null
-                        && customActionClickListener.onMenuItemClick(item))
-                       || onTrackItemClick(item, trackType);
-            }
-        });
-        Menu menu = popup.getMenu();
-        // ID_OFFSET ensures we avoid clashing with Menu.NONE (which equals 0).
-        menu.add(MENU_GROUP_TRACKS, DemoPlayer.TRACK_DISABLED + ID_OFFSET, Menu.NONE, R.string.off);
-        for (int i = 0; i < trackCount; i++) {
-            menu.add(MENU_GROUP_TRACKS, i + ID_OFFSET, Menu.NONE,
-                     buildTrackName(player.getTrackFormat(trackType, i)));
-        }
-        menu.setGroupCheckable(MENU_GROUP_TRACKS, true, true);
-        menu.findItem(player.getSelectedTrack(trackType) + ID_OFFSET).setChecked(true);
-    }
-
-    private static String buildTrackName(MediaFormat format) {
-        if (format.adaptive) {
-            return "auto";
-        }
-        String trackName;
-        if (MimeTypes.isVideo(format.mimeType)) {
-            trackName = joinWithSeparator(joinWithSeparator(buildResolutionString(format),
-                                                            buildBitrateString(format)), buildTrackIdString(format));
-        } else if (MimeTypes.isAudio(format.mimeType)) {
-            trackName = joinWithSeparator(joinWithSeparator(joinWithSeparator(buildLanguageString(format),
-                                                                              buildAudioPropertyString(format)), buildBitrateString(format)),
-                                          buildTrackIdString(format));
-        } else {
-            trackName = joinWithSeparator(joinWithSeparator(buildLanguageString(format),
-                                                            buildBitrateString(format)), buildTrackIdString(format));
-        }
-        return trackName.length() == 0 ? "unknown" : trackName;
-    }
-
-    private static String buildResolutionString(MediaFormat format) {
-        return format.width == MediaFormat.NO_VALUE || format.height == MediaFormat.NO_VALUE
-               ? "" : format.width + "x" + format.height;
-    }
-
-    private static String buildAudioPropertyString(MediaFormat format) {
-        return format.channelCount == MediaFormat.NO_VALUE || format.sampleRate == MediaFormat.NO_VALUE
-               ? "" : format.channelCount + "ch, " + format.sampleRate + "Hz";
-    }
-
-    private static String buildLanguageString(MediaFormat format) {
-        return TextUtils.isEmpty(format.language) || "und".equals(format.language) ? ""
-                                                                                   : format.language;
-    }
-
-    private static String buildBitrateString(MediaFormat format) {
-        return format.bitrate == MediaFormat.NO_VALUE ? ""
-                                                      : String.format(Locale.US, "%.2fMbit", format.bitrate / 1000000f);
-    }
-
-    private static String joinWithSeparator(String first, String second) {
-        return first.length() == 0 ? second : (second.length() == 0 ? first : first + ", " + second);
-    }
-
-    private static String buildTrackIdString(MediaFormat format) {
-        return format.trackId == null ? "" : " (" + format.trackId + ")";
-    }
-
-    private boolean onTrackItemClick(MenuItem item, int type) {
-        if (player == null || item.getGroupId() != MENU_GROUP_TRACKS) {
-            return false;
-        }
-        player.setSelectedTrack(type, item.getItemId() - ID_OFFSET);
-        return true;
-    }
-
-    @Override
     public void hideControls() {
         mediaController.hide();
-        debugRootView.setVisibility(View.GONE);
     }
 
-    @Override
-    public void showControls() {
+    private void showControls() {
         mediaController.show(0);
-        debugRootView.setVisibility(View.VISIBLE);
     }
 
     // DemoPlayer.CaptionListener implementation

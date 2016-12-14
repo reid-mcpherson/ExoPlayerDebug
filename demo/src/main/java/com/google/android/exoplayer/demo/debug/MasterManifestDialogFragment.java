@@ -1,4 +1,4 @@
-package com.google.android.exoplayer.demo;
+package com.google.android.exoplayer.demo.debug;
 
 import android.app.DialogFragment;
 import android.os.Bundle;
@@ -9,6 +9,7 @@ import android.widget.TextView;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import com.google.android.exoplayer.chunk.Format;
+import com.google.android.exoplayer.demo.R;
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.hls.HlsPlaylist;
 import com.google.android.exoplayer.hls.Variant;

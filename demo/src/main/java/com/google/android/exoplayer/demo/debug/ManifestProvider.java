@@ -1,4 +1,4 @@
-package com.google.android.exoplayer.demo;
+package com.google.android.exoplayer.demo.debug;
 
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.hls.HlsMediaPlaylist;

@@ -1,5 +1,6 @@
 package com.google.android.exoplayer.demo;
 
+import com.google.android.exoplayer.demo.debug.ManifestProvider;
 import dagger.Module;
 import dagger.Provides;
 

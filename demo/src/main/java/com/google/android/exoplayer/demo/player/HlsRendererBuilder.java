@@ -28,6 +28,7 @@ import com.google.android.exoplayer.SampleSource;
 import com.google.android.exoplayer.TrackRenderer;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.demo.player.DemoPlayer.RendererBuilder;
+import com.google.android.exoplayer.demo.util.Logger;
 import com.google.android.exoplayer.hls.DefaultHlsTrackSelector;
 import com.google.android.exoplayer.hls.HlsChunkSource;
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
@@ -55,6 +56,7 @@ import java.util.List;
  */
 public class HlsRendererBuilder implements RendererBuilder {
 
+    private static final Logger LOG = Logger.getLogger(HlsRendererBuilder.class);
     private static final int BUFFER_SEGMENT_SIZE = 64 * 1024;
     private static final int MAIN_BUFFER_SEGMENTS = 254;
     private static final int AUDIO_BUFFER_SEGMENTS = 54;
@@ -131,6 +133,7 @@ public class HlsRendererBuilder implements RendererBuilder {
             if (canceled) {
                 return;
             }
+            LOG.debug("AsyncRendererBuilder", "onSingleManifest manifest type | " + manifest.getClass().getSimpleName());
             manifestCallback.onSingleManifest(manifest);
             Handler mainHandler = player.getMainHandler();
             LoadControl loadControl = new DefaultLoadControl(new DefaultAllocator(BUFFER_SEGMENT_SIZE));

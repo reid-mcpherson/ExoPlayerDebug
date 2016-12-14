@@ -35,6 +35,7 @@ import com.google.android.exoplayer.audio.AudioTrack;
 import com.google.android.exoplayer.chunk.ChunkSampleSource;
 import com.google.android.exoplayer.chunk.Format;
 import com.google.android.exoplayer.dash.DashChunkSource;
+import com.google.android.exoplayer.demo.debug.VideoPlayer;
 import com.google.android.exoplayer.drm.StreamingDrmSessionManager;
 import com.google.android.exoplayer.extractor.ExtractorSampleSource;
 import com.google.android.exoplayer.hls.HlsSampleSource;
@@ -44,7 +45,6 @@ import com.google.android.exoplayer.text.Cue;
 import com.google.android.exoplayer.text.TextRenderer;
 import com.google.android.exoplayer.upstream.BandwidthMeter;
 import com.google.android.exoplayer.upstream.DefaultBandwidthMeter;
-import com.google.android.exoplayer.util.DebugTextViewHelper;
 import com.google.android.exoplayer.util.PlayerControl;
 
 import java.io.IOException;
@@ -62,7 +62,7 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
                                    SingleSampleSource.EventListener, DefaultBandwidthMeter.EventListener,
                                    MediaCodecVideoTrackRenderer.EventListener, MediaCodecAudioTrackRenderer.EventListener,
                                    StreamingDrmSessionManager.EventListener, DashChunkSource.EventListener, TextRenderer,
-                                   MetadataRenderer<List<Id3Frame>>, DebugTextViewHelper.Provider {
+                                   MetadataRenderer<List<Id3Frame>>, VideoPlayer {
 
     /**
      * Builds renderers for the player.
@@ -222,10 +222,12 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
         return playerControl;
     }
 
+    @Override
     public void addListener(Listener listener) {
         listeners.add(listener);
     }
 
+    @Override
     public void removeListener(Listener listener) {
         listeners.remove(listener);
     }
@@ -260,18 +262,22 @@ public class DemoPlayer implements ExoPlayer.Listener, ChunkSampleSource.EventLi
         pushSurface(true);
     }
 
+    @Override
     public int getTrackCount(int type) {
         return player.getTrackCount(type);
     }
 
+    @Override
     public MediaFormat getTrackFormat(int type, int index) {
         return player.getTrackFormat(type, index);
     }
 
+    @Override
     public int getSelectedTrack(int type) {
         return player.getSelectedTrack(type);
     }
 
+    @Override
     public void setSelectedTrack(int type, int index) {
         player.setSelectedTrack(type, index);
         if (type == TYPE_TEXT && index < 0 && captionListener != null) {
