@@ -1,8 +1,6 @@
 package com.google.android.exoplayer.demo;
 
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
-import com.google.android.exoplayer.hls.HlsPlaylist;
-import com.google.android.exoplayer.util.ManifestFetcher;
 
 public interface VideoDebugView {
 
@@ -19,8 +17,6 @@ public interface VideoDebugView {
     void displayTextPopUp();
 
     void displayError(String text);
-
-    void setManifestCallback(ManifestFetcher.ManifestCallback<HlsPlaylist> manifestListener);
 
     void displayVerboseLogPopUp(MenuCallback menuCallback);
 

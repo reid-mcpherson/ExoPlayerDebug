@@ -61,7 +61,6 @@ import com.google.android.exoplayer.demo.player.HlsRendererBuilder;
 import com.google.android.exoplayer.demo.player.SmoothStreamingRendererBuilder;
 import com.google.android.exoplayer.drm.UnsupportedDrmException;
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
-import com.google.android.exoplayer.hls.HlsPlaylist;
 import com.google.android.exoplayer.metadata.id3.ApicFrame;
 import com.google.android.exoplayer.metadata.id3.GeobFrame;
 import com.google.android.exoplayer.metadata.id3.Id3Frame;
@@ -72,11 +71,11 @@ import com.google.android.exoplayer.text.CaptionStyleCompat;
 import com.google.android.exoplayer.text.Cue;
 import com.google.android.exoplayer.text.SubtitleLayout;
 import com.google.android.exoplayer.util.DebugTextViewHelper;
-import com.google.android.exoplayer.util.ManifestFetcher;
 import com.google.android.exoplayer.util.MimeTypes;
 import com.google.android.exoplayer.util.Util;
 import com.google.android.exoplayer.util.VerboseLogUtil;
 
+import javax.inject.Inject;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
@@ -104,8 +103,6 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
 
     private static final CookieManager defaultCookieManager;
 
-    private ManifestFetcher.ManifestCallback<HlsPlaylist> manifestCallback;
-
     static {
         defaultCookieManager = new CookieManager();
         defaultCookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ORIGINAL_SERVER);
@@ -124,6 +121,8 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
     @Bind(R.id.retry_button) Button retryButton;
     @Bind(R.id.master_manifest) Button manifestButton;
     @Bind(R.id.verbose_log_controls) Button verboseLogControls;
+
+    @Inject ManifestProvider manifestProvider;
 
     private EventLogger eventLogger;
     private MediaController mediaController;
@@ -150,7 +149,8 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.player_activity);
         ButterKnife.bind(this);
-        videoDebugPresenter = new LocalDebugPresenter();
+        ((DaggerObjectGraphProvider) getApplicationContext()).getObjectGraph().inject(this);
+        videoDebugPresenter = new LocalDebugPresenter(manifestProvider);
 
         View root = findViewById(R.id.root);
         root.setOnTouchListener(new View.OnTouchListener() {
@@ -340,7 +340,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
                 return new DashRendererBuilder(this, userAgent, contentUri.toString(),
                                                new WidevineTestMediaDrmCallback(contentId, provider));
             case Util.TYPE_HLS:
-                return new HlsRendererBuilder(this, userAgent, contentUri.toString(), manifestCallback);
+                return new HlsRendererBuilder(this, userAgent, contentUri.toString(), manifestProvider);
             case Util.TYPE_OTHER:
                 return new ExtractorRendererBuilder(this, userAgent, contentUri);
             default:
@@ -551,11 +551,6 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback, 
     @Override
     public void displayError(String text) {
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void setManifestCallback(ManifestFetcher.ManifestCallback<HlsPlaylist> manifestCallback) {
-        this.manifestCallback = manifestCallback;
     }
 
     @Override

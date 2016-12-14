@@ -1,20 +1,19 @@
 package com.google.android.exoplayer.demo;
 
 import com.google.android.exoplayer.demo.util.NullObject;
-import com.google.android.exoplayer.hls.HlsMasterPlaylist;
-import com.google.android.exoplayer.hls.HlsPlaylist;
-import com.google.android.exoplayer.util.ManifestFetcher;
 import com.google.android.exoplayer.util.VerboseLogUtil;
 
-import java.io.IOException;
-
-public class LocalDebugPresenter implements VideoDebugPresenter, ManifestFetcher.ManifestCallback<HlsPlaylist> {
+public class LocalDebugPresenter implements VideoDebugPresenter {
 
     private static final VideoDebugView NULL_VIEW = NullObject.create(VideoDebugView.class);
 
     private VideoDebugView view = NULL_VIEW;
 
-    private HlsMasterPlaylist manifest;
+    private final ManifestProvider manifestProvider;
+
+    public LocalDebugPresenter(ManifestProvider manifestProvider) {
+        this.manifestProvider = manifestProvider;
+    }
 
     @Override
     public void attachView(VideoDebugView view) {
@@ -28,7 +27,6 @@ public class LocalDebugPresenter implements VideoDebugPresenter, ManifestFetcher
 
     @Override
     public void present() {
-        view.setManifestCallback(this);
     }
 
     @Override
@@ -52,11 +50,11 @@ public class LocalDebugPresenter implements VideoDebugPresenter, ManifestFetcher
 
     @Override
     public void onMasterManifestButtonClicked() {
-        if (manifest == null) {
+        if (manifestProvider.getMasterPlaylist() == null) {
             view.displayError("Manifest is null");
         } else {
             view.hideControls();
-            view.displayMasterManifest(manifest);
+            view.displayMasterManifest(manifestProvider.getMasterPlaylist());
         }
     }
 
@@ -73,17 +71,5 @@ public class LocalDebugPresenter implements VideoDebugPresenter, ManifestFetcher
     @Override
     public void onVideoButtonClicked() {
         view.displayVideoPopUp();
-    }
-
-    @Override
-    public void onSingleManifest(HlsPlaylist manifest) {
-        if (manifest instanceof HlsMasterPlaylist) {
-            this.manifest = (HlsMasterPlaylist) manifest;
-        }
-    }
-
-    @Override
-    public void onSingleManifestError(IOException e) {
-        //no-op
     }
 }
