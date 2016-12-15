@@ -3,6 +3,7 @@ package com.google.android.exoplayer.demo;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import com.google.android.exoplayer.demo.debug.MasterManifestDialogFragment;
 import com.google.android.exoplayer.demo.debug.util.UiExecutor;
 import dagger.Module;
 import dagger.Provides;
@@ -11,7 +12,10 @@ import javax.inject.Singleton;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-@Module(injects = {PlayerActivity.class})
+@Module(injects = {
+        PlayerActivity.class,
+        MasterManifestDialogFragment.class})
+
 public class DemoModule {
     private final Context applicationContext;
 

@@ -1,8 +1,7 @@
-package com.google.android.exoplayer.demo.debug;
+package com.google.android.exoplayer.demo.debug.util;
 
 import android.content.Context;
 import android.os.Handler;
-import com.google.android.exoplayer.demo.debug.util.UiExecutor;
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.hls.HlsMediaPlaylist;
 import com.google.android.exoplayer.hls.HlsPlaylist;

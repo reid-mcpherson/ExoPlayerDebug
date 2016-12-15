@@ -5,7 +5,7 @@ import com.google.android.exoplayer.util.DebugTextViewHelper;
 
 import java.util.List;
 
-public interface DebugControlsView {
+public interface DebugView {
 
     void hideControls();
 

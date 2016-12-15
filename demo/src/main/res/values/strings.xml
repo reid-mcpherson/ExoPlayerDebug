@@ -52,6 +52,7 @@
 
     <string name="storage_permission_denied">Permission to access storage was denied</string>
 
+    <!-- Master Manifest -->
     <string name="master_manifest">Manifest</string>
     <string name="manifest_type">Type: %s</string>
     <string name="manifest_base_uri">Base URI: %s</string>
@@ -60,7 +61,6 @@
     <string name="manifest_variants">VARIANTS</string>
     <string name="manifest_audios">AUDIOS</string>
     <string name="manifest_subtitles">SUBTITLES</string>
-
 
     <string name="variant_format">FORMAT</string>
     <string name="variant_url">URL: %s</string>
@@ -74,5 +74,23 @@
     <string name="variant_width">Width: %d</string>
     <string name="variant_height">Height: %d</string>
     <string name="variant_frame_rate">Frame Rate: %f</string>
+
+    <!--Media Manifest-->
+    <string name="manifest_segments">Segments</string>
+    <string name="manifest_media_sequence">Media Sequence: %d</string>
+    <string name="manifest_target_duration">Target Duration Secs: %d</string>
+    <string name="manifest_version">Version: %d</string>
+    <string name="manifest_live">Live: %b</string>
+    <string name="manifest_duration">Duration Us: %d</string>
+
+    <string name="segment_url">URL: %s</string>
+    <string name="segment_duration">Duration Secs: %f</string>
+    <string name="segment_discontinuity">Discontinuity Sequence #: %d</string>
+    <string name="segment_start_time">Start Time Us: %d</string>
+    <string name="segment_encrypted">Encrypted: %b</string>
+    <string name="segment_encryption_key">Encryption Key Uri: %s</string>
+    <string name="segment_encryption_IV">Encryption IV: %s</string>
+    <string name="segment_byterange_offset">Byterange Offset: %d</string>
+    <string name="segment_byterange_length">Byterange Length: %d</string>
 
 </resources>

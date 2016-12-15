@@ -8,11 +8,14 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import com.google.android.exoplayer.demo.Demo;
 import com.google.android.exoplayer.demo.R;
 import com.google.android.exoplayer.demo.debug.model.MasterManifest;
+import com.google.android.exoplayer.demo.debug.util.ManifestProvider;
 import com.google.android.exoplayer.demo.debug.view.MasterManifestView;
 import com.google.android.exoplayer.hls.HlsPlaylist;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +24,8 @@ import static android.view.View.GONE;
 public class MasterManifestDialogFragment extends DialogFragment implements MasterManifestView {
 
     public static final String MASTER_MANIFEST = "masterManifest";
+
+    @Inject ManifestProvider manifestProvider;
 
     @Bind(R.id.type) TextView type;
     @Bind(R.id.baseUri) TextView baseUri;
@@ -39,6 +44,7 @@ public class MasterManifestDialogFragment extends DialogFragment implements Mast
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ((Demo) getActivity().getApplication()).getObjectGraph().inject(this);
         presenter = new MasterManifestPresenter((MasterManifest) getArguments().getSerializable(MASTER_MANIFEST));
     }
 
@@ -113,7 +119,7 @@ public class MasterManifestDialogFragment extends DialogFragment implements Mast
             View divider = inflater.inflate(R.layout.divider, variantContainer, false);
             variantContainer.addView(divider);
             VariantLayout content = (VariantLayout) inflater.inflate(R.layout.view_variant, variantContainer, false);
-            VariantPresenter presenter = new VariantPresenter(variant);
+            VariantPresenter presenter = new VariantPresenter(variant, manifestProvider);
             presenter.attachView(content);
             presenter.present();
             variantPresenters.add(presenter);
@@ -128,7 +134,7 @@ public class MasterManifestDialogFragment extends DialogFragment implements Mast
             View divider = inflater.inflate(R.layout.divider, subtitleContainer, false);
             subtitleContainer.addView(divider);
             VariantLayout content = (VariantLayout) inflater.inflate(R.layout.view_variant, subtitleContainer, false);
-            VariantPresenter presenter = new VariantPresenter(variant);
+            VariantPresenter presenter = new VariantPresenter(variant, manifestProvider);
             presenter.attachView(content);
             presenter.present();
             variantPresenters.add(presenter);
@@ -143,7 +149,7 @@ public class MasterManifestDialogFragment extends DialogFragment implements Mast
             View divider = inflater.inflate(R.layout.divider, audioContainer, false);
             audioContainer.addView(divider);
             VariantLayout content = (VariantLayout) inflater.inflate(R.layout.view_variant, audioContainer, false);
-            VariantPresenter presenter = new VariantPresenter(variant);
+            VariantPresenter presenter = new VariantPresenter(variant, manifestProvider);
             presenter.attachView(content);
             presenter.present();
             variantPresenters.add(presenter);

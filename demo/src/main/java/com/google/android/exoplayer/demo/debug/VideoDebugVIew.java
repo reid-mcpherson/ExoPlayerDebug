@@ -20,7 +20,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import com.google.android.exoplayer.demo.R;
 import com.google.android.exoplayer.demo.debug.model.MasterManifest;
-import com.google.android.exoplayer.demo.debug.view.DebugControlsView;
+import com.google.android.exoplayer.demo.debug.view.DebugView;
 import com.google.android.exoplayer.demo.player.DemoPlayer;
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.util.DebugTextViewHelper;
@@ -28,7 +28,7 @@ import com.google.android.exoplayer.util.VerboseLogUtil;
 
 import java.util.List;
 
-public class VideoDebugControlsView extends LinearLayout implements DebugControlsView {
+public class VideoDebugView extends LinearLayout implements DebugView {
 
     @Bind(R.id.player_state_view) TextView playerStateView;
     @Bind(R.id.debug_text_view) TextView debugTextView;
@@ -40,11 +40,11 @@ public class VideoDebugControlsView extends LinearLayout implements DebugControl
     @Bind(R.id.verbose_log_controls) Button verboseLogControls;
     @Bind(R.id.retry_button) Button retryButton;
 
-    private DebugControlsView.OnClickListener onClickListener;
+    private DebugView.OnClickListener onClickListener;
 
     private DebugTextViewHelper debugViewHelper;
 
-    public VideoDebugControlsView(Context context, AttributeSet attrs) {
+    public VideoDebugView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
@@ -92,7 +92,7 @@ public class VideoDebugControlsView extends LinearLayout implements DebugControl
     }
 
     @Override
-    public void setOnClickListener(DebugControlsView.OnClickListener onClickListener) {
+    public void setOnClickListener(DebugView.OnClickListener onClickListener) {
         this.onClickListener = onClickListener;
     }
 

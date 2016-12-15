@@ -4,11 +4,12 @@ import android.net.Uri;
 import android.text.TextUtils;
 import com.google.android.exoplayer.ExoPlayer;
 import com.google.android.exoplayer.MediaFormat;
-import com.google.android.exoplayer.demo.debug.presenter.DebugControlsPresenter;
-import com.google.android.exoplayer.demo.debug.view.DebugControlsView;
+import com.google.android.exoplayer.demo.debug.presenter.DebugPresenter;
+import com.google.android.exoplayer.demo.debug.util.ManifestProvider;
+import com.google.android.exoplayer.demo.debug.util.NullObject;
+import com.google.android.exoplayer.demo.debug.view.DebugView;
 import com.google.android.exoplayer.demo.debug.view.PlayerView;
 import com.google.android.exoplayer.demo.player.DemoPlayer;
-import com.google.android.exoplayer.demo.debug.util.NullObject;
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.hls.HlsMediaPlaylist;
 import com.google.android.exoplayer.util.DebugTextViewHelper;
@@ -20,30 +21,30 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class DebugControlsPresenterImpl implements DebugControlsPresenter, DemoPlayer.Listener, DebugControlsView.OnClickListener {
+public class VideoDebugPresenter implements DebugPresenter, DemoPlayer.Listener, DebugView.OnClickListener {
     private static final int MENU_GROUP_TRACKS = 1;
     private static final int ID_OFFSET = 2;
 
-    private final DebugControlsView NULL_VIEW = NullObject.create(DebugControlsView.class);
+    private final DebugView NULL_VIEW = NullObject.create(DebugView.class);
     private final PlayerView NULL_PLAYER_VIEW = NullObject.create(PlayerView.class);
     private final VideoPlayer videoPlayer;
     private final ManifestProvider manifestProvider;
     private final Uri contentUri;
 
-    private DebugControlsView view = NULL_VIEW;
+    private DebugView view = NULL_VIEW;
     private PlayerView playerView = NULL_PLAYER_VIEW;
 
     private HlsMasterPlaylist hlsMasterPlaylist;
 
-    public DebugControlsPresenterImpl(VideoPlayer videoPlayer, ManifestProvider manifestProvider, Uri contentUri) {
+    public VideoDebugPresenter(VideoPlayer videoPlayer, ManifestProvider manifestProvider, Uri contentUri) {
         this.videoPlayer = videoPlayer;
         this.manifestProvider = manifestProvider;
         this.contentUri = contentUri;
     }
 
     @Override
-    public void attachView(DebugControlsView videoDebugControlsView, PlayerView playerView) {
-        this.view = videoDebugControlsView;
+    public void attachView(DebugView videoDebugView, PlayerView playerView) {
+        this.view = videoDebugView;
         this.playerView = playerView;
         view.setOnClickListener(this);
         videoPlayer.addListener(this);
@@ -65,7 +66,7 @@ public class DebugControlsPresenterImpl implements DebugControlsPresenter, DemoP
             return;
         }
 
-        view.displayVideoPopup(new DebugControlsView.PopupMenuClickListener() {
+        view.displayVideoPopup(new DebugView.PopupMenuClickListener() {
                                    @Override
                                    public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
                                        return onTrackItemClick(groupId, itemId, DemoPlayer.TYPE_VIDEO);
@@ -85,7 +86,7 @@ public class DebugControlsPresenterImpl implements DebugControlsPresenter, DemoP
         }
 
         view.displayAudioPopUp(playerView.backgroundAudioEnabled(),
-                               new DebugControlsView.PopupMenuClickListener() {
+                               new DebugView.PopupMenuClickListener() {
                                    @Override
                                    public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
                                        if (enabled) {
@@ -108,7 +109,7 @@ public class DebugControlsPresenterImpl implements DebugControlsPresenter, DemoP
             return;
         }
 
-        view.displayTextPopup(new DebugControlsView.PopupMenuClickListener() {
+        view.displayTextPopup(new DebugView.PopupMenuClickListener() {
                                   @Override
                                   public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
                                       return onTrackItemClick(groupId, itemId, DemoPlayer.TYPE_TEXT);
@@ -123,13 +124,14 @@ public class DebugControlsPresenterImpl implements DebugControlsPresenter, DemoP
 
     @Override
     public void onManifestButtonClicked() {
+        playerView.hideControls();
         if (hlsMasterPlaylist == null) {
             view.displayManifestButton("Loading...", false);
             manifestProvider.fetchManifest(contentUri.toString(), new ManifestProvider.ManifestListener() {
                 @Override
                 public void onMasterManifest(HlsMasterPlaylist hlsMasterPlaylist) {
                     view.displayManifestButton("Manifest", true);
-                    DebugControlsPresenterImpl.this.hlsMasterPlaylist = hlsMasterPlaylist;
+                    VideoDebugPresenter.this.hlsMasterPlaylist = hlsMasterPlaylist;
                     view.displayMasterManifest(hlsMasterPlaylist);
                 }
 
@@ -152,7 +154,7 @@ public class DebugControlsPresenterImpl implements DebugControlsPresenter, DemoP
 
     @Override
     public void onVerboseLogControlsClicked() {
-        view.displayVerboseLogPopUp(new DebugControlsView.PopupMenuClickListener() {
+        view.displayVerboseLogPopUp(new DebugView.PopupMenuClickListener() {
             @Override
             public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
                 VerboseLogUtil.setEnableAllTags(enabled);

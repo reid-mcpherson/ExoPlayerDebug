@@ -41,10 +41,10 @@ import com.google.android.exoplayer.MediaCodecTrackRenderer.DecoderInitializatio
 import com.google.android.exoplayer.MediaCodecUtil.DecoderQueryException;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
-import com.google.android.exoplayer.demo.debug.presenter.DebugControlsPresenter;
-import com.google.android.exoplayer.demo.debug.DebugControlsPresenterImpl;
-import com.google.android.exoplayer.demo.debug.view.DebugControlsView;
-import com.google.android.exoplayer.demo.debug.ManifestProvider;
+import com.google.android.exoplayer.demo.debug.VideoDebugPresenter;
+import com.google.android.exoplayer.demo.debug.presenter.DebugPresenter;
+import com.google.android.exoplayer.demo.debug.view.DebugView;
+import com.google.android.exoplayer.demo.debug.util.ManifestProvider;
 import com.google.android.exoplayer.demo.debug.view.PlayerView;
 import com.google.android.exoplayer.demo.player.DashRendererBuilder;
 import com.google.android.exoplayer.demo.player.DemoPlayer;
@@ -101,7 +101,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
     @Bind(R.id.shutter) View shutterView;
     @Bind(R.id.video_frame) AspectRatioFrameLayout videoFrame;
     @Bind(R.id.surface_view) SurfaceView surfaceView;
-    @Bind(R.id.view_debug) DebugControlsView debugView;
+    @Bind(R.id.view_debug) DebugView debugView;
 
     @Bind(R.id.subtitles) SubtitleLayout subtitleLayout;
 
@@ -121,7 +121,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
     private String provider;
 
     private AudioCapabilitiesReceiver audioCapabilitiesReceiver;
-    private DebugControlsPresenter debugControlsPresenter;
+    private DebugPresenter debugPresenter;
 
     // Activity lifecycle
 
@@ -136,8 +136,8 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                    if (debugControlsPresenter != null) {
-                        debugControlsPresenter.toggleControls(mediaController.isShowing());
+                    if (debugPresenter != null) {
+                        debugPresenter.toggleControls(mediaController.isShowing());
                         if (mediaController.isShowing()) {
                             hideControls();
                         } else {
@@ -353,20 +353,20 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
             player.prepare();
             playerNeedsPrepare = false;
         }
-        if (debugControlsPresenter != null) {
-            debugControlsPresenter.detachView();
+        if (debugPresenter != null) {
+            debugPresenter.detachView();
         }
-        debugControlsPresenter = new DebugControlsPresenterImpl(player, manifestProvider, getIntent().getData());
-        debugControlsPresenter.attachView(debugView, this);
+        debugPresenter = new VideoDebugPresenter(player, manifestProvider, getIntent().getData());
+        debugPresenter.attachView(debugView, this);
 
         player.setSurface(surfaceView.getHolder().getSurface());
         player.setPlayWhenReady(playWhenReady);
     }
 
     private void releasePlayer() {
-        if (debugControlsPresenter != null) {
-            debugControlsPresenter.detachView();
-            debugControlsPresenter = null;
+        if (debugPresenter != null) {
+            debugPresenter.detachView();
+            debugPresenter = null;
         }
 
         if (player != null) {
@@ -439,6 +439,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
         return player != null && player.getTrackCount(type) > 0;
     }
 
+    @Override
     public void hideControls() {
         mediaController.hide();
     }

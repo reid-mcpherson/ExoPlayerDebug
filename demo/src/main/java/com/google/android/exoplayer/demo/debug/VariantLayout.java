@@ -1,14 +1,24 @@
 package com.google.android.exoplayer.demo.debug;
 
+import android.app.Activity;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Context;
+import android.os.Bundle;
 import android.util.AttributeSet;
-import android.widget.LinearLayout;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import com.google.android.exoplayer.demo.R;
+import com.google.android.exoplayer.demo.debug.model.MediaManifest;
+import com.google.android.exoplayer.demo.debug.view.VariantView;
+import com.google.android.exoplayer.hls.HlsMediaPlaylist;
 
-public class VariantLayout extends LinearLayout implements com.google.android.exoplayer.demo.debug.view.VariantView {
+public class VariantLayout extends FrameLayout implements VariantView {
 
     @Bind(R.id.url) TextView url;
     @Bind(R.id.id) TextView id;
@@ -21,6 +31,7 @@ public class VariantLayout extends LinearLayout implements com.google.android.ex
     @Bind(R.id.audioSamplingRate) TextView audioSamplingRate;
     @Bind(R.id.codecs) TextView codecs;
     @Bind(R.id.language) TextView language;
+    @Bind(R.id.progress) ProgressBar progress;
 
     public VariantLayout(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
@@ -85,5 +96,44 @@ public class VariantLayout extends LinearLayout implements com.google.android.ex
     @Override
     public void displayLanguage(String language) {
         this.language.setText(getResources().getString(R.string.variant_language, language));
+    }
+
+    @Override
+    public void displayError(String text) {
+        Toast.makeText(getContext(), text, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void displayMediaPlaylist(HlsMediaPlaylist hlsMediaPlaylist) {
+        FragmentManager fragmentManager = ((Activity) getContext()).getFragmentManager();
+        MediaManifestDialogFragment mediaManifestDialogFragment = new MediaManifestDialogFragment();
+        Bundle bundle = new Bundle();
+        bundle.putSerializable(MediaManifestDialogFragment.MEDIA_MANIFEST, new MediaManifest(hlsMediaPlaylist));
+        mediaManifestDialogFragment.setArguments(bundle);
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+        transaction.add(android.R.id.content, mediaManifestDialogFragment).addToBackStack(null).commit();
+    }
+
+    @Override
+    public void setClickListener(final ClickListener clickListener) {
+        setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (clickListener != null) {
+                    clickListener.onVariantClicked();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void displayLoading() {
+        progress.setVisibility(VISIBLE);
+    }
+
+    @Override
+    public void hideLoading() {
+        progress.setVisibility(GONE);
     }
 }

@@ -1,5 +1,7 @@
 package com.google.android.exoplayer.demo.debug.view;
 
+import com.google.android.exoplayer.hls.HlsMediaPlaylist;
+
 public interface VariantView {
 
     void displayUrl(String url);
@@ -23,4 +25,18 @@ public interface VariantView {
     void displayCodecs(String codecs);
 
     void displayLanguage(String language);
+
+    void setClickListener(ClickListener clickListener);
+
+    void displayLoading();
+
+    void hideLoading();
+
+    void displayError(String text);
+
+    void displayMediaPlaylist(HlsMediaPlaylist hlsMediaPlaylist);
+
+    interface ClickListener {
+        void onVariantClicked();
+    }
 }

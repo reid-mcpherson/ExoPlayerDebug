@@ -4,6 +4,8 @@ public interface PlayerView {
 
     boolean backgroundAudioEnabled();
 
+    void hideControls();
+
     void enableBackgroundAudio(boolean backgroundAudio);
 
     void preparePlayer(boolean playWhenReady);
