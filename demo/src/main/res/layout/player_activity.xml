@@ -46,7 +46,7 @@
     </com.google.android.exoplayer.AspectRatioFrameLayout>
     <include
         android:id="@+id/view_debug"
-        layout="@layout/view_debug"
+        layout="@layout/view_debug_controls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 

@@ -1,4 +1,4 @@
-package com.google.android.exoplayer.demo.util;
+package com.google.android.exoplayer.demo.debug.util;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;

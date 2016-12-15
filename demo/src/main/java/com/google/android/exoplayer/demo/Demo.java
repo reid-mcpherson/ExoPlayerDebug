@@ -10,7 +10,7 @@ public class Demo extends Application implements DaggerObjectGraphProvider {
     @Override
     public void onCreate() {
         super.onCreate();
-        objectGraph = ObjectGraph.create(new DemoModule());
+        objectGraph = ObjectGraph.create(new DemoModule(this));
     }
 
     @Override

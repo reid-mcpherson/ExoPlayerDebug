@@ -1,4 +1,4 @@
-package com.google.android.exoplayer.demo.debug;
+package com.google.android.exoplayer.demo.debug.view;
 
 public interface PlayerView {
 

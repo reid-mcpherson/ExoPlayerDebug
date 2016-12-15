@@ -1,4 +1,4 @@
-package com.google.android.exoplayer.demo.debug;
+package com.google.android.exoplayer.demo.debug.view;
 
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.util.DebugTextViewHelper;
@@ -30,6 +30,8 @@ public interface DebugControlsView {
     void hideAudioButton();
 
     void hideTextButton();
+
+    void displayManifestButton(String text, boolean enabled);
 
     void displayError(String text);
 
@@ -70,7 +72,7 @@ public interface DebugControlsView {
 
         void onTextButtonClicked();
 
-        void onMasterManifestButtonClicked();
+        void onManifestButtonClicked();
 
         void onVerboseLogControlsClicked();
 

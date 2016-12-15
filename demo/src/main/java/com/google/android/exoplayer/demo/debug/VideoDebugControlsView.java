@@ -19,6 +19,8 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import com.google.android.exoplayer.demo.R;
+import com.google.android.exoplayer.demo.debug.model.MasterManifest;
+import com.google.android.exoplayer.demo.debug.view.DebugControlsView;
 import com.google.android.exoplayer.demo.player.DemoPlayer;
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.util.DebugTextViewHelper;
@@ -66,7 +68,7 @@ public class VideoDebugControlsView extends LinearLayout implements DebugControl
                     onClickListener.onTextButtonClicked();
                     break;
                 case R.id.master_manifest:
-                    onClickListener.onMasterManifestButtonClicked();
+                    onClickListener.onManifestButtonClicked();
                     break;
                 case R.id.verbose_log_controls:
                     onClickListener.onVerboseLogControlsClicked();
@@ -140,17 +142,22 @@ public class VideoDebugControlsView extends LinearLayout implements DebugControl
     }
 
     @Override
+    public void displayManifestButton(String text, boolean enabled) {
+        masterManifestButton.setText(text);
+        masterManifestButton.setEnabled(enabled);
+    }
+
+    @Override
     public void displayMasterManifest(HlsMasterPlaylist hlsMasterPlaylist) {
         FragmentManager fragmentManager = ((Activity) getContext()).getFragmentManager();
         MasterManifestDialogFragment masterManifestDialogFragment = new MasterManifestDialogFragment();
         Bundle bundle = new Bundle();
-        bundle.putSerializable(MasterManifestDialogFragment.MASTER_MANIFEST, new MasterManifestDialogFragment.SerializableHlsMasterPlaylist(hlsMasterPlaylist));
+        bundle.putSerializable(MasterManifestDialogFragment.MASTER_MANIFEST, new MasterManifest(hlsMasterPlaylist));
         masterManifestDialogFragment.setArguments(bundle);
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
         transaction.add(android.R.id.content, masterManifestDialogFragment).addToBackStack(null).commit();
     }
-
 
     @Override
     public void displayAudioPopUp(boolean enableBackgroundAudio, final PopupMenuClickListener popupMenuClickListener, int menuGroup, int offset, int trackCount, List<String> trackNames, int selectedTrack) {

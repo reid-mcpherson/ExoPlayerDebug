@@ -41,17 +41,18 @@ import com.google.android.exoplayer.MediaCodecTrackRenderer.DecoderInitializatio
 import com.google.android.exoplayer.MediaCodecUtil.DecoderQueryException;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
-import com.google.android.exoplayer.demo.debug.DebugControlsPresenter;
+import com.google.android.exoplayer.demo.debug.presenter.DebugControlsPresenter;
 import com.google.android.exoplayer.demo.debug.DebugControlsPresenterImpl;
-import com.google.android.exoplayer.demo.debug.DebugControlsView;
+import com.google.android.exoplayer.demo.debug.view.DebugControlsView;
 import com.google.android.exoplayer.demo.debug.ManifestProvider;
-import com.google.android.exoplayer.demo.debug.PlayerView;
+import com.google.android.exoplayer.demo.debug.view.PlayerView;
 import com.google.android.exoplayer.demo.player.DashRendererBuilder;
 import com.google.android.exoplayer.demo.player.DemoPlayer;
 import com.google.android.exoplayer.demo.player.DemoPlayer.RendererBuilder;
 import com.google.android.exoplayer.demo.player.ExtractorRendererBuilder;
 import com.google.android.exoplayer.demo.player.HlsRendererBuilder;
 import com.google.android.exoplayer.demo.player.SmoothStreamingRendererBuilder;
+import com.google.android.exoplayer.demo.debug.util.Logger;
 import com.google.android.exoplayer.drm.UnsupportedDrmException;
 import com.google.android.exoplayer.metadata.id3.ApicFrame;
 import com.google.android.exoplayer.metadata.id3.GeobFrame;
@@ -79,7 +80,7 @@ import static android.view.View.VISIBLE;
 public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
                                                         DemoPlayer.CaptionListener, DemoPlayer.Id3MetadataListener,
                                                         DemoPlayer.Listener, AudioCapabilitiesReceiver.Listener, PlayerView {
-
+    private static final Logger LOG = Logger.getLogger(PlayerActivity.class);
     // For use within demo app code.
     public static final String CONTENT_ID_EXTRA = "content_id";
     public static final String CONTENT_TYPE_EXTRA = "content_type";
@@ -130,7 +131,6 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
         setContentView(R.layout.player_activity);
         ButterKnife.bind(this);
         ((DaggerObjectGraphProvider) getApplicationContext()).getObjectGraph().inject(this);
-
         View root = findViewById(R.id.root);
         root.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -314,7 +314,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
                 return new DashRendererBuilder(this, userAgent, contentUri.toString(),
                                                new WidevineTestMediaDrmCallback(contentId, provider));
             case Util.TYPE_HLS:
-                return new HlsRendererBuilder(this, userAgent, contentUri.toString(), manifestProvider);
+                return new HlsRendererBuilder(this, userAgent, contentUri.toString());
             case Util.TYPE_OTHER:
                 return new ExtractorRendererBuilder(this, userAgent, contentUri);
             default:
@@ -356,9 +356,8 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
         if (debugControlsPresenter != null) {
             debugControlsPresenter.detachView();
         }
-        debugControlsPresenter = new DebugControlsPresenterImpl(player, manifestProvider);
+        debugControlsPresenter = new DebugControlsPresenterImpl(player, manifestProvider, getIntent().getData());
         debugControlsPresenter.attachView(debugView, this);
-        debugControlsPresenter.present();
 
         player.setSurface(surfaceView.getHolder().getSurface());
         player.setPlayWhenReady(playWhenReady);

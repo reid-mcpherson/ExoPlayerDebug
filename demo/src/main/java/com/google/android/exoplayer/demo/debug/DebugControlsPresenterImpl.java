@@ -1,23 +1,26 @@
 package com.google.android.exoplayer.demo.debug;
 
+import android.net.Uri;
 import android.text.TextUtils;
-import android.view.MenuItem;
-import android.widget.PopupMenu;
 import com.google.android.exoplayer.ExoPlayer;
 import com.google.android.exoplayer.MediaFormat;
+import com.google.android.exoplayer.demo.debug.presenter.DebugControlsPresenter;
+import com.google.android.exoplayer.demo.debug.view.DebugControlsView;
+import com.google.android.exoplayer.demo.debug.view.PlayerView;
 import com.google.android.exoplayer.demo.player.DemoPlayer;
-import com.google.android.exoplayer.demo.util.NullObject;
+import com.google.android.exoplayer.demo.debug.util.NullObject;
+import com.google.android.exoplayer.hls.HlsMasterPlaylist;
+import com.google.android.exoplayer.hls.HlsMediaPlaylist;
 import com.google.android.exoplayer.util.DebugTextViewHelper;
 import com.google.android.exoplayer.util.MimeTypes;
 import com.google.android.exoplayer.util.VerboseLogUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static android.R.attr.enabled;
-
-public class DebugControlsPresenterImpl implements DebugControlsPresenter, DemoPlayer.Listener {
+public class DebugControlsPresenterImpl implements DebugControlsPresenter, DemoPlayer.Listener, DebugControlsView.OnClickListener {
     private static final int MENU_GROUP_TRACKS = 1;
     private static final int ID_OFFSET = 2;
 
@@ -25,19 +28,24 @@ public class DebugControlsPresenterImpl implements DebugControlsPresenter, DemoP
     private final PlayerView NULL_PLAYER_VIEW = NullObject.create(PlayerView.class);
     private final VideoPlayer videoPlayer;
     private final ManifestProvider manifestProvider;
+    private final Uri contentUri;
 
     private DebugControlsView view = NULL_VIEW;
     private PlayerView playerView = NULL_PLAYER_VIEW;
 
-    public DebugControlsPresenterImpl(VideoPlayer videoPlayer, ManifestProvider manifestProvider) {
+    private HlsMasterPlaylist hlsMasterPlaylist;
+
+    public DebugControlsPresenterImpl(VideoPlayer videoPlayer, ManifestProvider manifestProvider, Uri contentUri) {
         this.videoPlayer = videoPlayer;
         this.manifestProvider = manifestProvider;
+        this.contentUri = contentUri;
     }
 
     @Override
     public void attachView(DebugControlsView videoDebugControlsView, PlayerView playerView) {
         this.view = videoDebugControlsView;
         this.playerView = playerView;
+        view.setOnClickListener(this);
         videoPlayer.addListener(this);
         prepareDebugTextViewHelper(videoPlayer);
     }
@@ -52,99 +60,110 @@ public class DebugControlsPresenterImpl implements DebugControlsPresenter, DemoP
     }
 
     @Override
-    public void present() {
-        view.setOnClickListener(new DebugControlsView.OnClickListener() {
-                                    @Override
-                                    public void onVideoButtonClicked() {
-                                        if (videoPlayer == null) {
-                                            return;
-                                        }
+    public void onVideoButtonClicked() {
+        if (videoPlayer == null) {
+            return;
+        }
 
-                                        view.displayVideoPopup(new DebugControlsView.PopupMenuClickListener() {
-                                                                   @Override
-                                                                   public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
-                                                                       return onTrackItemClick(groupId, itemId, DemoPlayer.TYPE_VIDEO);
-                                                                   }
-                                                               },
-                                                               MENU_GROUP_TRACKS,
-                                                               ID_OFFSET,
-                                                               videoPlayer.getTrackCount(DemoPlayer.TYPE_VIDEO),
-                                                               getTrackNameList(DemoPlayer.TYPE_VIDEO, videoPlayer.getTrackCount(DemoPlayer.TYPE_VIDEO)),
-                                                               videoPlayer.getSelectedTrack(DemoPlayer.TYPE_VIDEO));
-                                    }
+        view.displayVideoPopup(new DebugControlsView.PopupMenuClickListener() {
+                                   @Override
+                                   public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
+                                       return onTrackItemClick(groupId, itemId, DemoPlayer.TYPE_VIDEO);
+                                   }
+                               },
+                               MENU_GROUP_TRACKS,
+                               ID_OFFSET,
+                               videoPlayer.getTrackCount(DemoPlayer.TYPE_VIDEO),
+                               getTrackNameList(DemoPlayer.TYPE_VIDEO, videoPlayer.getTrackCount(DemoPlayer.TYPE_VIDEO)),
+                               videoPlayer.getSelectedTrack(DemoPlayer.TYPE_VIDEO));
+    }
 
-                                    @Override
-                                    public void onAudioButtonClicked() {
-                                        if (videoPlayer == null) {
-                                            return;
-                                        }
+    @Override
+    public void onAudioButtonClicked() {
+        if (videoPlayer == null) {
+            return;
+        }
 
-                                        view.displayAudioPopUp(playerView.backgroundAudioEnabled(),
-                                                               new DebugControlsView.PopupMenuClickListener() {
-                                                                   @Override
-                                                                   public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
-                                                                       if (enabled) {
-                                                                           playerView.enableBackgroundAudio(checked);
-                                                                           return true;
-                                                                       }
-                                                                       return onTrackItemClick(groupId, itemId, DemoPlayer.TYPE_AUDIO);
-                                                                   }
-                                                               },
-                                                               MENU_GROUP_TRACKS,
-                                                               ID_OFFSET,
-                                                               videoPlayer.getTrackCount(DemoPlayer.TYPE_AUDIO),
-                                                               getTrackNameList(DemoPlayer.TYPE_AUDIO, videoPlayer.getTrackCount(DemoPlayer.TYPE_AUDIO)),
-                                                               videoPlayer.getSelectedTrack(DemoPlayer.TYPE_AUDIO));
-                                    }
+        view.displayAudioPopUp(playerView.backgroundAudioEnabled(),
+                               new DebugControlsView.PopupMenuClickListener() {
+                                   @Override
+                                   public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
+                                       if (enabled) {
+                                           playerView.enableBackgroundAudio(checked);
+                                           return true;
+                                       }
+                                       return onTrackItemClick(groupId, itemId, DemoPlayer.TYPE_AUDIO);
+                                   }
+                               },
+                               MENU_GROUP_TRACKS,
+                               ID_OFFSET,
+                               videoPlayer.getTrackCount(DemoPlayer.TYPE_AUDIO),
+                               getTrackNameList(DemoPlayer.TYPE_AUDIO, videoPlayer.getTrackCount(DemoPlayer.TYPE_AUDIO)),
+                               videoPlayer.getSelectedTrack(DemoPlayer.TYPE_AUDIO));
+    }
 
-                                    @Override
-                                    public void onTextButtonClicked() {
-                                        if (videoPlayer == null) {
-                                            return;
-                                        }
+    @Override
+    public void onTextButtonClicked() {
+        if (videoPlayer == null) {
+            return;
+        }
 
-                                        view.displayTextPopup(new DebugControlsView.PopupMenuClickListener() {
-                                                                  @Override
-                                                                  public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
-                                                                      return onTrackItemClick(groupId, itemId, DemoPlayer.TYPE_TEXT);
-                                                                  }
-                                                              },
-                                                              MENU_GROUP_TRACKS,
-                                                              ID_OFFSET,
-                                                              videoPlayer.getTrackCount(DemoPlayer.TYPE_TEXT),
-                                                              getTrackNameList(DemoPlayer.TYPE_TEXT, videoPlayer.getTrackCount(DemoPlayer.TYPE_TEXT)),
-                                                              videoPlayer.getSelectedTrack(DemoPlayer.TYPE_TEXT));
-                                    }
+        view.displayTextPopup(new DebugControlsView.PopupMenuClickListener() {
+                                  @Override
+                                  public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
+                                      return onTrackItemClick(groupId, itemId, DemoPlayer.TYPE_TEXT);
+                                  }
+                              },
+                              MENU_GROUP_TRACKS,
+                              ID_OFFSET,
+                              videoPlayer.getTrackCount(DemoPlayer.TYPE_TEXT),
+                              getTrackNameList(DemoPlayer.TYPE_TEXT, videoPlayer.getTrackCount(DemoPlayer.TYPE_TEXT)),
+                              videoPlayer.getSelectedTrack(DemoPlayer.TYPE_TEXT));
+    }
 
-                                    @Override
-                                    public void onMasterManifestButtonClicked() {
-                                        if (manifestProvider.getMasterPlaylist() == null) {
-                                            view.displayError("Master Manifest is null");
-                                        } else {
-                                            view.displayMasterManifest(manifestProvider.getMasterPlaylist());
-                                        }
-                                    }
+    @Override
+    public void onManifestButtonClicked() {
+        if (hlsMasterPlaylist == null) {
+            view.displayManifestButton("Loading...", false);
+            manifestProvider.fetchManifest(contentUri.toString(), new ManifestProvider.ManifestListener() {
+                @Override
+                public void onMasterManifest(HlsMasterPlaylist hlsMasterPlaylist) {
+                    view.displayManifestButton("Manifest", true);
+                    DebugControlsPresenterImpl.this.hlsMasterPlaylist = hlsMasterPlaylist;
+                    view.displayMasterManifest(hlsMasterPlaylist);
+                }
 
-                                    @Override
-                                    public void onVerboseLogControlsClicked() {
-                                        view.displayVerboseLogPopUp(new DebugControlsView.PopupMenuClickListener() {
-                                                                        @Override
-                                                                        public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
-                                                                            VerboseLogUtil.setEnableAllTags(enabled);
-                                                                            return true;
-                                                                        }
-                                                                    }
+                @Override
+                public void onMediaPlaylist(HlsMediaPlaylist hlsMediaPlaylist) {
+                    view.displayManifestButton("Manifest", true);
+                    view.displayError("Incorrect manifest was fetched!");
+                }
 
-                                                                   );
-                                    }
+                @Override
+                public void onError(IOException e) {
+                    view.displayManifestButton("Manifest", true);
+                    view.displayError("Error fetching master manifest");
+                }
+            });
+        } else {
+            view.displayMasterManifest(hlsMasterPlaylist);
+        }
+    }
 
-                                    @Override
-                                    public void onRetryButtonClicked() {
-                                        playerView.preparePlayer(true);
-                                    }
-                                }
+    @Override
+    public void onVerboseLogControlsClicked() {
+        view.displayVerboseLogPopUp(new DebugControlsView.PopupMenuClickListener() {
+            @Override
+            public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
+                VerboseLogUtil.setEnableAllTags(enabled);
+                return true;
+            }
+        });
+    }
 
-                               );
+    @Override
+    public void onRetryButtonClicked() {
+        playerView.preparePlayer(true);
     }
 
     private void prepareDebugTextViewHelper(DebugTextViewHelper.Provider provider) {

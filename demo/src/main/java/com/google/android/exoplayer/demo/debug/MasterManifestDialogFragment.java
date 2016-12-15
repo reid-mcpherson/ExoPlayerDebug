@@ -8,19 +8,17 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import butterknife.Bind;
 import butterknife.ButterKnife;
-import com.google.android.exoplayer.chunk.Format;
 import com.google.android.exoplayer.demo.R;
-import com.google.android.exoplayer.hls.HlsMasterPlaylist;
+import com.google.android.exoplayer.demo.debug.model.MasterManifest;
+import com.google.android.exoplayer.demo.debug.view.MasterManifestView;
 import com.google.android.exoplayer.hls.HlsPlaylist;
-import com.google.android.exoplayer.hls.Variant;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import static android.view.View.GONE;
 
-public class MasterManifestDialogFragment extends DialogFragment {
+public class MasterManifestDialogFragment extends DialogFragment implements MasterManifestView {
 
     public static final String MASTER_MANIFEST = "masterManifest";
 
@@ -35,129 +33,121 @@ public class MasterManifestDialogFragment extends DialogFragment {
     @Bind(R.id.audioContainer) ViewGroup audioContainer;
     @Bind(R.id.subtitleContainer) ViewGroup subtitleContainer;
 
-    private SerializableHlsMasterPlaylist masterManifest;
+    private final List<VariantPresenter> variantPresenters = new ArrayList<>();
+    private MasterManifestPresenter presenter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        masterManifest = (SerializableHlsMasterPlaylist) getArguments().getSerializable(MASTER_MANIFEST);
+        presenter = new MasterManifestPresenter((MasterManifest) getArguments().getSerializable(MASTER_MANIFEST));
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.dialog_master_manifest, container, false);
         ButterKnife.bind(this, view);
-        String typeText = getResources().getString(R.string.manifest_type, masterManifest.type == HlsPlaylist.TYPE_MASTER ? "MASTER" : "MEDIA");
-        type.setText(typeText);
-        baseUri.setText(getResources().getString(R.string.manifest_base_uri, masterManifest.baseUri));
-        muxedAudioLanguage.setText(getResources().getString(R.string.manifest_muxed_audio_lang, masterManifest.muxedAudioLanguage));
-        muxedCaptionLanguage.setText(getResources().getString(R.string.manifest_muxed_caption_lang, masterManifest.muxedCaptionLanguage));
-
-        if (masterManifest.variants.isEmpty()) {
-            variantSubtitle.setVisibility(GONE);
-        } else {
-            for (SerializableVariant variant : masterManifest.variants) {
-                View divider = inflater.inflate(R.layout.divider, variantContainer, false);
-                variantContainer.addView(divider);
-                VariantView content = (VariantView) inflater.inflate(R.layout.view_variant, variantContainer, false);
-                content.setUp(variant);
-                variantContainer.addView(content);
-            }
-        }
-
-        if (masterManifest.audios.isEmpty()) {
-            audioSubtitle.setVisibility(GONE);
-        } else {
-            for (SerializableVariant variant : masterManifest.audios) {
-                View divider = inflater.inflate(R.layout.divider, audioContainer, false);
-                audioContainer.addView(divider);
-                VariantView content = (VariantView) inflater.inflate(R.layout.view_variant, audioContainer, false);
-                content.setUp(variant);
-                audioContainer.addView(content);
-            }
-        }
-
-        if (masterManifest.subtitles.isEmpty()) {
-            subtitleSubtitle.setVisibility(GONE);
-        } else {
-            for (SerializableVariant variant : masterManifest.subtitles) {
-                View divider = inflater.inflate(R.layout.divider, subtitleContainer, false);
-                subtitleContainer.addView(divider);
-                VariantView content = (VariantView) inflater.inflate(R.layout.view_variant, subtitleContainer, false);
-                content.setUp(variant);
-                subtitleContainer.addView(content);
-            }
-        }
-
         return view;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        presenter.attachView(this);
+        presenter.present();
+    }
 
-    public static class SerializableHlsMasterPlaylist implements Serializable {
-        public final List<SerializableVariant> variants = new ArrayList<>();
-        public final List<SerializableVariant> audios = new ArrayList<>();
-        public final List<SerializableVariant> subtitles = new ArrayList<>();
+    @Override
+    public void onPause() {
+        presenter.detachView();
+        for (VariantPresenter presenter : variantPresenters) {
+            presenter.detachView();
+        }
+        variantPresenters.clear();
+        variantContainer.removeAllViews();
+        subtitleContainer.removeAllViews();
+        audioContainer.removeAllViews();
 
-        public final String muxedAudioLanguage;
-        public final String muxedCaptionLanguage;
+        super.onPause();
+    }
 
-        public final int type;
-        public final String baseUri;
+    @Override
+    public void displayType(int type) {
+        String typeText = getResources().getString(R.string.manifest_type, type == HlsPlaylist.TYPE_MASTER ? "MASTER" : "MEDIA");
+        this.type.setText(typeText);
+    }
 
-        public SerializableHlsMasterPlaylist(HlsMasterPlaylist hlsMasterPlaylist) {
-            for (Variant variant : hlsMasterPlaylist.variants) {
-                variants.add(new SerializableVariant(variant));
-            }
+    @Override
+    public void displayBaseUri(String baseUri) {
+        this.baseUri.setText(getResources().getString(R.string.manifest_base_uri, baseUri));
+    }
 
-            for (Variant variant : hlsMasterPlaylist.audios) {
-                audios.add(new SerializableVariant(variant));
-            }
+    @Override
+    public void displayMuxedAudioLanguage(String muxedAudioLanguage) {
+        this.muxedAudioLanguage.setText(getResources().getString(R.string.manifest_muxed_audio_lang, muxedAudioLanguage));
+    }
 
-            for (Variant variant : hlsMasterPlaylist.subtitles) {
-                subtitles.add(new SerializableVariant(variant));
-            }
+    @Override
+    public void displayMuxedCaptionLanguage(String muxedCaptionLanguage) {
+        this.muxedCaptionLanguage.setText(getResources().getString(R.string.manifest_muxed_caption_lang, muxedCaptionLanguage));
+    }
 
-            this.muxedAudioLanguage = hlsMasterPlaylist.muxedAudioLanguage;
-            this.muxedCaptionLanguage = hlsMasterPlaylist.muxedCaptionLanguage;
-            this.type = hlsMasterPlaylist.type;
-            this.baseUri = hlsMasterPlaylist.baseUri;
+    @Override
+    public void hideVariantsSubtitle() {
+        variantSubtitle.setVisibility(GONE);
+    }
+
+    @Override
+    public void hideSubtitlesSubtitle() {
+        subtitleSubtitle.setVisibility(GONE);
+    }
+
+    @Override
+    public void hideAudioSubtitle() {
+        audioSubtitle.setVisibility(GONE);
+    }
+
+    @Override
+    public void displayVariants(List<MasterManifest.Variant> variants) {
+        LayoutInflater inflater = getActivity().getLayoutInflater();
+        for (MasterManifest.Variant variant : variants) {
+            View divider = inflater.inflate(R.layout.divider, variantContainer, false);
+            variantContainer.addView(divider);
+            VariantLayout content = (VariantLayout) inflater.inflate(R.layout.view_variant, variantContainer, false);
+            VariantPresenter presenter = new VariantPresenter(variant);
+            presenter.attachView(content);
+            presenter.present();
+            variantPresenters.add(presenter);
+            variantContainer.addView(content);
         }
     }
 
-    public static class SerializableVariant implements Serializable {
-        public final String url;
-        public final SerializableFormat format;
-
-        public SerializableVariant(Variant variant) {
-            this.url = variant.url;
-            this.format = new SerializableFormat(variant.format);
+    @Override
+    public void displaySubtitleVariants(List<MasterManifest.Variant> variants) {
+        LayoutInflater inflater = getActivity().getLayoutInflater();
+        for (MasterManifest.Variant variant : variants) {
+            View divider = inflater.inflate(R.layout.divider, subtitleContainer, false);
+            subtitleContainer.addView(divider);
+            VariantLayout content = (VariantLayout) inflater.inflate(R.layout.view_variant, subtitleContainer, false);
+            VariantPresenter presenter = new VariantPresenter(variant);
+            presenter.attachView(content);
+            presenter.present();
+            variantPresenters.add(presenter);
+            subtitleContainer.addView(content);
         }
-
     }
 
-    public static class SerializableFormat implements Serializable {
-        public final String id;
-        public final String mimeType;
-        public final int bitrate;
-        public final int width;
-        public final int height;
-        public final float frameRate;
-        public final int audioChannels;
-        public final int audioSamplingRate;
-        public final String codecs;
-        public final String language;
-
-        public SerializableFormat(Format format) {
-            this.id = format.id;
-            this.mimeType = format.mimeType;
-            this.bitrate = format.bitrate;
-            this.width = format.width;
-            this.height = format.height;
-            this.frameRate = format.frameRate;
-            this.audioChannels = format.audioChannels;
-            this.audioSamplingRate = format.audioSamplingRate;
-            this.codecs = format.codecs;
-            this.language = format.language;
+    @Override
+    public void displayAudioVariants(List<MasterManifest.Variant> variants) {
+        LayoutInflater inflater = getActivity().getLayoutInflater();
+        for (MasterManifest.Variant variant : variants) {
+            View divider = inflater.inflate(R.layout.divider, audioContainer, false);
+            audioContainer.addView(divider);
+            VariantLayout content = (VariantLayout) inflater.inflate(R.layout.view_variant, audioContainer, false);
+            VariantPresenter presenter = new VariantPresenter(variant);
+            presenter.attachView(content);
+            presenter.present();
+            variantPresenters.add(presenter);
+            audioContainer.addView(content);
         }
     }
 }

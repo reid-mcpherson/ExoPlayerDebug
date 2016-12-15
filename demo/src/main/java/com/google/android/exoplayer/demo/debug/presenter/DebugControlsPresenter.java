@@ -1,4 +1,7 @@
-package com.google.android.exoplayer.demo.debug;
+package com.google.android.exoplayer.demo.debug.presenter;
+
+import com.google.android.exoplayer.demo.debug.view.DebugControlsView;
+import com.google.android.exoplayer.demo.debug.view.PlayerView;
 
 public interface DebugControlsPresenter {
 
@@ -6,11 +9,7 @@ public interface DebugControlsPresenter {
 
     void detachView();
 
-    void present();
-
     void toggleControls(boolean playerControlsVisible);
-
-    void onStateChanged(boolean playWhenReady, int playbackState);
 
     void updateButtonVisibilities();
 }
