@@ -18,8 +18,6 @@ public class VariantPresenter implements Presenter<VariantView>, VariantView.Cli
 
     private VariantView view = NULL_VIEW;
 
-    private HlsMediaPlaylist hlsMediaPlaylist;
-
     public VariantPresenter(MasterManifest.Variant variant, ManifestProvider manifestProvider) {
         this.variant = variant;
         this.manifestProvider = manifestProvider;
@@ -65,34 +63,29 @@ public class VariantPresenter implements Presenter<VariantView>, VariantView.Cli
 
     @Override
     public void onVariantClicked() {
-        if (hlsMediaPlaylist == null) {
-            view.displayLoading();
-            view.setClickListener(null);
-            manifestProvider.fetchManifest(variant.url, new ManifestProvider.ManifestListener() {
-                @Override
-                public void onMasterManifest(HlsMasterPlaylist hlsMasterPlaylist) {
-                    view.hideLoading();
-                    view.setClickListener(VariantPresenter.this);
-                    view.displayError("Incorrect manifest returned");
-                }
+        view.displayLoading();
+        view.setClickListener(null);
+        manifestProvider.fetchManifest(variant.url, new ManifestProvider.ManifestListener() {
+            @Override
+            public void onMasterManifest(HlsMasterPlaylist hlsMasterPlaylist) {
+                view.hideLoading();
+                view.setClickListener(VariantPresenter.this);
+                view.displayError("Incorrect manifest returned");
+            }
 
-                @Override
-                public void onMediaPlaylist(HlsMediaPlaylist hlsMediaPlaylist) {
-                    view.hideLoading();
-                    view.setClickListener(VariantPresenter.this);
-                    VariantPresenter.this.hlsMediaPlaylist = hlsMediaPlaylist;
-                    view.displayMediaPlaylist(hlsMediaPlaylist);
-                }
+            @Override
+            public void onMediaPlaylist(HlsMediaPlaylist hlsMediaPlaylist) {
+                view.setClickListener(VariantPresenter.this);
+                view.displayMediaPlaylist(hlsMediaPlaylist);
+                view.hideLoading();
+            }
 
-                @Override
-                public void onError(IOException e) {
-                    view.hideLoading();
-                    view.setClickListener(VariantPresenter.this);
-                    view.displayError("Error retrieving media manifest");
-                }
-            });
-        } else {
-            view.displayMediaPlaylist(hlsMediaPlaylist);
-        }
+            @Override
+            public void onError(IOException e) {
+                view.hideLoading();
+                view.setClickListener(VariantPresenter.this);
+                view.displayError("Error retrieving media manifest");
+            }
+        });
     }
 }

@@ -34,7 +34,7 @@
         android:largeHeap="true">
 
         <activity
-            android:name="com.google.android.exoplayer.demo.SampleChooserActivity"
+            android:name="com.google.android.exoplayer.demo.MainActivity"
             android:configChanges="keyboardHidden"
             android:label="@string/application_name">
             <intent-filter>

@@ -125,6 +125,7 @@ public class VideoDebugPresenter implements DebugPresenter, DemoPlayer.Listener,
     @Override
     public void onManifestButtonClicked() {
         playerView.hideControls();
+        view.hideControls();
         if (hlsMasterPlaylist == null) {
             view.displayManifestButton("Loading...", false);
             manifestProvider.fetchManifest(contentUri.toString(), new ManifestProvider.ManifestListener() {
