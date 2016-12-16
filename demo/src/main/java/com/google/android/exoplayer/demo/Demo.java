@@ -1,6 +1,7 @@
 package com.google.android.exoplayer.demo;
 
 import android.app.Application;
+import com.google.android.exoplayer.demo.debug.util.DaggerObjectGraphProvider;
 import dagger.ObjectGraph;
 
 public class Demo extends Application implements DaggerObjectGraphProvider {

@@ -1,4 +1,4 @@
-package com.google.android.exoplayer.demo;
+package com.google.android.exoplayer.demo.debug.util;
 
 import dagger.ObjectGraph;
 

@@ -24,7 +24,6 @@ import com.google.android.exoplayer.demo.debug.view.DebugView;
 import com.google.android.exoplayer.demo.player.DemoPlayer;
 import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.util.DebugTextViewHelper;
-import com.google.android.exoplayer.util.VerboseLogUtil;
 
 import java.util.List;
 
@@ -37,7 +36,6 @@ public class VideoDebugView extends LinearLayout implements DebugView {
     @Bind(R.id.audio_controls) Button audioButton;
     @Bind(R.id.text_controls) Button textButton;
     @Bind(R.id.master_manifest) Button masterManifestButton;
-    @Bind(R.id.verbose_log_controls) Button verboseLogControls;
     @Bind(R.id.retry_button) Button retryButton;
 
     private DebugView.OnClickListener onClickListener;
@@ -54,7 +52,7 @@ public class VideoDebugView extends LinearLayout implements DebugView {
         ButterKnife.bind(this);
     }
 
-    @OnClick({R.id.video_controls, R.id.audio_controls, R.id.text_controls, R.id.master_manifest, R.id.verbose_log_controls, R.id.retry_button})
+    @OnClick({R.id.video_controls, R.id.audio_controls, R.id.text_controls, R.id.master_manifest, R.id.retry_button})
     public void onClick(View view) {
         if (onClickListener != null) {
             switch (view.getId()) {
@@ -69,9 +67,6 @@ public class VideoDebugView extends LinearLayout implements DebugView {
                     break;
                 case R.id.master_manifest:
                     onClickListener.onManifestButtonClicked();
-                    break;
-                case R.id.verbose_log_controls:
-                    onClickListener.onVerboseLogControlsClicked();
                     break;
                 case R.id.retry_button:
                     onClickListener.onRetryButtonClicked();
@@ -206,24 +201,6 @@ public class VideoDebugView extends LinearLayout implements DebugView {
                 return popupMenuClickListener.onMenuItemClick(item.getGroupId(), item.getItemId(), false, false);
             }
         }, trackNames, menuGroup, offset, selectedTrack);
-        popup.show();
-    }
-
-    @Override
-    public void displayVerboseLogPopUp(final PopupMenuClickListener popupMenuClickListener) {
-        PopupMenu popup = new PopupMenu(getContext(), verboseLogControls);
-        Menu menuVerbose = popup.getMenu();
-        menuVerbose.add(Menu.NONE, 0, Menu.NONE, R.string.logging_normal);
-        menuVerbose.add(Menu.NONE, 1, Menu.NONE, R.string.logging_verbose);
-        menuVerbose.setGroupCheckable(Menu.NONE, true, true);
-        menuVerbose.findItem((VerboseLogUtil.areAllTagsEnabled()) ? 1 : 0).setChecked(true);
-        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                popupMenuClickListener.onMenuItemClick(-1, -1, item.getItemId() != 0, false);
-                return true;
-            }
-        });
         popup.show();
     }
 

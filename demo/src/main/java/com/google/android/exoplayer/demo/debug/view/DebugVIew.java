@@ -59,8 +59,6 @@ public interface DebugView {
                           List<String> trackNames,
                           int selectedTrack);
 
-    void displayVerboseLogPopUp(PopupMenuClickListener popupMenuClickListener);
-
     void prepareDebugTextViewHelper(DebugTextViewHelper.Provider provider);
 
     void releaseDebugTextViewHelper();
@@ -73,8 +71,6 @@ public interface DebugView {
         void onTextButtonClicked();
 
         void onManifestButtonClicked();
-
-        void onVerboseLogControlsClicked();
 
         void onRetryButtonClicked();
     }

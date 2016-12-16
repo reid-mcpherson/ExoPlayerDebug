@@ -43,6 +43,7 @@ import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
 import com.google.android.exoplayer.demo.debug.VideoDebugPresenter;
 import com.google.android.exoplayer.demo.debug.presenter.DebugPresenter;
+import com.google.android.exoplayer.demo.debug.util.DaggerObjectGraphProvider;
 import com.google.android.exoplayer.demo.debug.view.DebugView;
 import com.google.android.exoplayer.demo.debug.util.ManifestProvider;
 import com.google.android.exoplayer.demo.debug.view.PlayerView;
@@ -356,7 +357,7 @@ public class PlayerActivity extends Activity implements SurfaceHolder.Callback,
         if (debugPresenter != null) {
             debugPresenter.detachView();
         }
-        debugPresenter = new VideoDebugPresenter(player, manifestProvider, getIntent().getData());
+        debugPresenter = new VideoDebugPresenter(player, manifestProvider, getIntent().getData().toString());
         debugPresenter.attachView(debugView, this);
 
         player.setSurface(surfaceView.getHolder().getSurface());

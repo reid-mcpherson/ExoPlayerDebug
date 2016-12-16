@@ -1,7 +1,5 @@
 package com.google.android.exoplayer.demo.debug;
 
-import android.net.Uri;
-import android.text.TextUtils;
 import com.google.android.exoplayer.ExoPlayer;
 import com.google.android.exoplayer.MediaFormat;
 import com.google.android.exoplayer.demo.debug.presenter.DebugPresenter;
@@ -14,7 +12,6 @@ import com.google.android.exoplayer.hls.HlsMasterPlaylist;
 import com.google.android.exoplayer.hls.HlsMediaPlaylist;
 import com.google.android.exoplayer.util.DebugTextViewHelper;
 import com.google.android.exoplayer.util.MimeTypes;
-import com.google.android.exoplayer.util.VerboseLogUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,17 +26,17 @@ public class VideoDebugPresenter implements DebugPresenter, DemoPlayer.Listener,
     private final PlayerView NULL_PLAYER_VIEW = NullObject.create(PlayerView.class);
     private final VideoPlayer videoPlayer;
     private final ManifestProvider manifestProvider;
-    private final Uri contentUri;
+    private final String contentUrl;
 
     private DebugView view = NULL_VIEW;
     private PlayerView playerView = NULL_PLAYER_VIEW;
 
     private HlsMasterPlaylist hlsMasterPlaylist;
 
-    public VideoDebugPresenter(VideoPlayer videoPlayer, ManifestProvider manifestProvider, Uri contentUri) {
+    public VideoDebugPresenter(VideoPlayer videoPlayer, ManifestProvider manifestProvider, String contentUrl) {
         this.videoPlayer = videoPlayer;
         this.manifestProvider = manifestProvider;
-        this.contentUri = contentUri;
+        this.contentUrl = contentUrl;
     }
 
     @Override
@@ -128,7 +125,7 @@ public class VideoDebugPresenter implements DebugPresenter, DemoPlayer.Listener,
         view.hideControls();
         if (hlsMasterPlaylist == null) {
             view.displayManifestButton("Loading...", false);
-            manifestProvider.fetchManifest(contentUri.toString(), new ManifestProvider.ManifestListener() {
+            manifestProvider.fetchManifest(contentUrl, new ManifestProvider.ManifestListener() {
                 @Override
                 public void onMasterManifest(HlsMasterPlaylist hlsMasterPlaylist) {
                     view.displayManifestButton("Manifest", true);
@@ -151,17 +148,6 @@ public class VideoDebugPresenter implements DebugPresenter, DemoPlayer.Listener,
         } else {
             view.displayMasterManifest(hlsMasterPlaylist);
         }
-    }
-
-    @Override
-    public void onVerboseLogControlsClicked() {
-        view.displayVerboseLogPopUp(new DebugView.PopupMenuClickListener() {
-            @Override
-            public boolean onMenuItemClick(int groupId, int itemId, boolean enabled, boolean checked) {
-                VerboseLogUtil.setEnableAllTags(enabled);
-                return true;
-            }
-        });
     }
 
     @Override
@@ -303,8 +289,9 @@ public class VideoDebugPresenter implements DebugPresenter, DemoPlayer.Listener,
     }
 
     private static String buildLanguageString(MediaFormat format) {
-        return TextUtils.isEmpty(format.language) || "und".equals(format.language) ? ""
-                                                                                   : format.language;
+
+        return (format.language == null || format.language.isEmpty()) || "und".equals(format.language) ? ""
+                                                                                                       : format.language;
     }
 
     private static String buildBitrateString(MediaFormat format) {
