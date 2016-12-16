@@ -93,4 +93,7 @@
     <string name="segment_byterange_offset">Byterange Offset: %d</string>
     <string name="segment_byterange_length">Byterange Length: %d</string>
 
+    <string name="button_continue">Continue</string>
+    <string name="button_clear">Clear</string>
+    <string name="hint">Enter video url</string>
 </resources>

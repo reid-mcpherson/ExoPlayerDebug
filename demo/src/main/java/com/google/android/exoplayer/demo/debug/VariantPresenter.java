@@ -64,18 +64,15 @@ public class VariantPresenter implements Presenter<VariantView>, VariantView.Cli
     @Override
     public void onVariantClicked() {
         view.displayLoading();
-        view.setClickListener(null);
         manifestProvider.fetchManifest(variant.url, new ManifestProvider.ManifestListener() {
             @Override
             public void onMasterManifest(HlsMasterPlaylist hlsMasterPlaylist) {
                 view.hideLoading();
-                view.setClickListener(VariantPresenter.this);
                 view.displayError("Incorrect manifest returned");
             }
 
             @Override
             public void onMediaPlaylist(HlsMediaPlaylist hlsMediaPlaylist) {
-                view.setClickListener(VariantPresenter.this);
                 view.displayMediaPlaylist(hlsMediaPlaylist);
                 view.hideLoading();
             }
@@ -83,7 +80,6 @@ public class VariantPresenter implements Presenter<VariantView>, VariantView.Cli
             @Override
             public void onError(IOException e) {
                 view.hideLoading();
-                view.setClickListener(VariantPresenter.this);
                 view.displayError("Error retrieving media manifest");
             }
         });

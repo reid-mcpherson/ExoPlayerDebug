@@ -120,9 +120,7 @@ public class VariantLayout extends FrameLayout implements VariantView {
         setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (clickListener != null) {
-                    clickListener.onVariantClicked();
-                }
+                clickListener.onVariantClicked();
             }
         });
     }

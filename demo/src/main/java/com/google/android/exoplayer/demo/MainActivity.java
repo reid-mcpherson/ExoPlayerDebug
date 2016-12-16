@@ -23,17 +23,26 @@ public class MainActivity extends Activity {
         ButterKnife.bind(this);
     }
 
-    @OnClick({R.id.continueButton})
+    @OnClick({R.id.clearButton, R.id.continueButton})
     public void onClick(View v) {
-        if (url.getText().toString().isEmpty()) {
-            Toast.makeText(this, "Please enter a url to continue", Toast.LENGTH_SHORT).show();
-        } else {
-            Intent mpdIntent = new Intent(this, PlayerActivity.class)
-                    .setData(Uri.parse(url.getText().toString()))
-                    .putExtra(PlayerActivity.CONTENT_ID_EXTRA, "redbull")
-                    .putExtra(PlayerActivity.CONTENT_TYPE_EXTRA, Util.TYPE_HLS)
-                    .putExtra(PlayerActivity.PROVIDER_EXTRA, "");
-            startActivity(mpdIntent);
+        switch (v.getId()) {
+            case R.id.clearButton:
+                url.setText("");
+                break;
+            case R.id.continueButton:
+                if (url.getText().toString().isEmpty()) {
+                    Toast.makeText(this, "Please enter a url to continue", Toast.LENGTH_SHORT).show();
+                } else {
+                    Intent mpdIntent = new Intent(this, PlayerActivity.class)
+                            .setData(Uri.parse(url.getText().toString()))
+                            .putExtra(PlayerActivity.CONTENT_ID_EXTRA, "redbull")
+                            .putExtra(PlayerActivity.CONTENT_TYPE_EXTRA, Util.TYPE_HLS)
+                            .putExtra(PlayerActivity.PROVIDER_EXTRA, "");
+                    startActivity(mpdIntent);
+                }
+                break;
+            default:
         }
+
     }
 }

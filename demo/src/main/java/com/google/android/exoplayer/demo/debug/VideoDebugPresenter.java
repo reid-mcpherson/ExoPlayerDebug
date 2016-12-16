@@ -121,8 +121,6 @@ public class VideoDebugPresenter implements DebugPresenter, DemoPlayer.Listener,
 
     @Override
     public void onManifestButtonClicked() {
-        playerView.hideControls();
-        view.hideControls();
         if (hlsMasterPlaylist == null) {
             view.displayManifestButton("Loading...", false);
             manifestProvider.fetchManifest(contentUrl, new ManifestProvider.ManifestListener() {
@@ -131,6 +129,8 @@ public class VideoDebugPresenter implements DebugPresenter, DemoPlayer.Listener,
                     view.displayManifestButton("Manifest", true);
                     VideoDebugPresenter.this.hlsMasterPlaylist = hlsMasterPlaylist;
                     view.displayMasterManifest(hlsMasterPlaylist);
+                    playerView.hideControls();
+                    view.hideControls();
                 }
 
                 @Override
@@ -147,6 +147,8 @@ public class VideoDebugPresenter implements DebugPresenter, DemoPlayer.Listener,
             });
         } else {
             view.displayMasterManifest(hlsMasterPlaylist);
+            playerView.hideControls();
+            view.hideControls();
         }
     }
 
